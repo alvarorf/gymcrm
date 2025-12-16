@@ -29,8 +29,8 @@ public class TraineeDaoImpl implements TraineeDao {
         // The put() method in Java's Map interface adds a new key-value pair or
         // update the value if the key already exists: V put(K key, V value)
         storage.getTraineeStorageMap().put(trainee.getUserId(), trainee);
-        return trainee;
 
+        return trainee;
     }
 
     @Override
