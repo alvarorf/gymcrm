@@ -7,6 +7,8 @@ Additionally, we could later have methods (e.g., for credentials), that accept a
 */
 
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 /*
 From: https://projectlombok.org/features/Data
 @Data generates all the boilerplate that is normally associated with simple POJOs (Plain Old Java Objects) and beans:
@@ -20,12 +22,14 @@ annotations (such as callSuper, includeFieldNames and exclude) cannot be set wit
 All generated getters and setters will be public.
  */
 
-@Data
+@Data // Generates getters, setters, toString, equals/hashCode
+@SuperBuilder // Required for Builder pattern inheritance
+@NoArgsConstructor
 public class User {
     private Long UserId;
     private String firstName;
     private String lastName;
     private String username;
     private String password;
-    private boolean isActive;
+    private boolean isActive = true;
 }
