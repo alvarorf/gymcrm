@@ -1,0 +1,5 @@
+1. Implement three service classes Trainee Service, Trainer Service, Training Service
+2. Trainee Service class should support possibility to create/update/delete/select Trainee
+profile.
+3. Trainer Service class should support possibility to create/update/select Trainer profile.
+4. Training Service class should support possibility to create/select Training profile.

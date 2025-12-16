@@ -1,4 +1,7 @@
 package com.gymcrm.model;
+import lombok.Data;
 
-public class Trainer {
+@Data
+public class Trainer extends User {
+
 }
