@@ -44,6 +44,4 @@ public class TrainingServiceImpl implements TrainingService {
 
         return training;
     }
-
-
 }

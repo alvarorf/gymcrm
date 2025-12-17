@@ -54,7 +54,6 @@ public class Storage {
     }
 
 
-
     /*
     Req3: Implement the ability to initialize storage with some prepared data from the file
      during the application start (use spring bean post-processing features).

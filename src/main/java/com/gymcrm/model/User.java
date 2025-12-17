@@ -2,10 +2,11 @@ package com.gymcrm.model;
 
 /*
 It makes that User is an abstract class the specifications do not require its instantiation
-Therefore, we shouldn't be able to create an User without a role.
+Therefore, we shouldn't be able to create a User without a role.
 Additionally, we could later have methods (e.g., for credentials), that accept a generic User type.
 */
 
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
@@ -24,7 +25,7 @@ All generated getters and setters will be public.
 
 @Data // Generates getters, setters, toString, equals/hashCode
 @SuperBuilder // Required for Builder pattern inheritance
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PUBLIC) // It is protected by default
 public class User {
     private Long UserId;
     private String firstName;

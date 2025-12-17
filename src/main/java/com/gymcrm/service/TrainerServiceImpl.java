@@ -6,11 +6,16 @@ import com.gymcrm.service.interfaces.TrainerService;
 import com.gymcrm.util.UsernamePasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.Optional;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service  // Could also be @Component
 public class TrainerServiceImpl implements TrainerService {
+
+    // Logger
+    private static final Logger logger = LoggerFactory.getLogger(TrainerServiceImpl.class);
 
     // Dependency injected via constructor (because, by req4:
     // "DAO with storage bean should be inserted into services beans using auto wiring")
@@ -22,41 +27,45 @@ public class TrainerServiceImpl implements TrainerService {
 
     // Constructor-based injection, we only inject TrainerDao because it is a core dependency
 
-    public TrainerServiceImpl(TrainerDao trainerDao, UsernamePasswordGenerator generator)
+    public TrainerServiceImpl(TrainerDao trainerDao)
     {
         this.trainerDao = trainerDao;
+        logger.info("TrainerServiceImpl initialized with constructor injection for DAO.");
     }
 
     // Setter-based injection for UsernamePasswordGenerator
     @Autowired
     public void setGenerator(UsernamePasswordGenerator generator) {
         this.generator = generator;
+        logger.info("UsernamePasswordGenerator injected via setter.");
     }
 
     @Override
     public Trainer createProfile(Trainer trainer)
     {
+        logger.info("Attempting to create new Trainer profile: {} {}", trainer.getFirstName(), trainer.getLastName());
         String username = generator.generateUsername(trainer.getFirstName(), trainer.getLastName());
         String password = generator.generatePassword();
-
 
         trainer.setUsername(username);
         trainer.setPassword(password);
 
-        trainer.setActive(true);
-
-        return trainerDao.save(trainer);
+        Trainer savedTrainer = trainerDao.save(trainer);
+        logger.info("Trainer created successfully. Username: {}", savedTrainer.getUsername());
+        return savedTrainer;
     }
 
     @Override
     public Trainer updateProfile(Trainer trainer)
     {
+        logger.info("Attempting to update Trainer profile with ID: {}", trainer.getUserId());
         return trainerDao.save(trainer);
     }
 
     @Override
     public Optional<Trainer> selectProfile(Long id)
     {
+        logger.info("Attempting to select Trainer profile with ID: {}", id);
         return trainerDao.findById(id);
     }
 }

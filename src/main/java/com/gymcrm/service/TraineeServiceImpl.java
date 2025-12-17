@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /*
 Trainee Service class should support possibility to create/update/delete/select Trainee
 profile.
@@ -25,13 +28,17 @@ It is a specialization (implementation) of @Component and allows TraineeServiceI
 public class TraineeServiceImpl implements TraineeService {
     // Why final? Because TraineeDao is a core dependency, injected via the constructor
     private final TraineeDao traineeDao;
-    // on-Core Dependency (UsernamePasswordGenerator). Must NOT be final, for injection via Setter
+    // Non-Core Dependency (UsernamePasswordGenerator). Must NOT be final, for injection via Setter
     private UsernamePasswordGenerator generator;
+
+    // Logger
+    private static final Logger logger = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
     // Constructor-based injection (only for core dependencies)
     public TraineeServiceImpl(TraineeDao traineeDao)
     {
         this.traineeDao = traineeDao;
+        logger.info("TraineeServiceImpl initialized with constructor injection for DAO.");
     }
 
     // Setter-based injection for the non-core dependency (UsernamePasswordGenerator)
@@ -43,32 +50,36 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     public Trainee createProfile(Trainee trainee)
     {
+        logger.info("Attempting to create new Trainee profile: {} {}", trainee.getFirstName(), trainee.getLastName());
         String username = generator.generateUsername(trainee.getFirstName(), trainee.getLastName());
         String password = generator.generatePassword();
 
         trainee.setUsername(username);
         trainee.setPassword(password);
 
-        trainee.setActive(true);
-
-        return traineeDao.save(trainee);
+        Trainee savedTrainee = traineeDao.save(trainee);
+        logger.info("Trainee created successfully. Username: {}", savedTrainee.getUsername());
+        return savedTrainee;
     }
 
     @Override
     public Trainee updateProfile(Trainee trainee)
     {
+        logger.info("Attempting to update Trainee profile with ID: {}", trainee.getUserId());
         return traineeDao.save(trainee);
     }
 
     @Override
     public Optional<Trainee> selectProfile(Long id)
     {
+        logger.info("Attempting to select Trainee profile with ID: {}", id);
         return traineeDao.findById(id);
     }
 
     @Override
     public void deleteProfile(Long id)
     {
+        logger.warn("Attempting to delete Trainee profile with ID: {}", id);
         traineeDao.delete(id);
     }
 }
