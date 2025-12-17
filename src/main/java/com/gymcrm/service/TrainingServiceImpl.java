@@ -6,9 +6,11 @@ import com.gymcrm.service.interfaces.TrainingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+@Service  // Could also be @Component
 public class TrainingServiceImpl implements TrainingService {
     private static final Logger logger = LoggerFactory.getLogger(TrainingServiceImpl.class);
 

@@ -1,23 +1,24 @@
 package com.gymcrm;
 
-import com.gymcrm.config.AppConfig;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-
+import com.gymcrm.facade.GymFacade;
 import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
 import com.gymcrm.service.interfaces.TraineeService;
+import com.gymcrm.service.interfaces.TrainerService;
+
+import java.util.Optional;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. Initialize Spring Context using Java-based configuration
-        ApplicationContext context = new AnnotationConfigApplicationContext(AppConfig.class);
-        System.out.println("Spring Core context initialized.");
+        // Initialize the Facade (which handles Spring Context internally)
+        GymFacade gym = new GymFacade();
+        System.out.println("--- Gym CRM System Initialized via Facade ---");
 
+        // Retrieve services through the Facade
+        TraineeService traineeService = gym.getTraineeService();
+        TrainerService trainerService = gym.getTrainerService();
 
-        // 2. Retrieve the Service bean
-        TraineeService traineeService = context.getBean(TraineeService.class);
-
-        // 3. Test Trainee Creation
+        // Test Trainee Creation
         Trainee newTrainee = Trainee.builder()
                 .firstName("John")
                 .lastName("Doe")
@@ -26,21 +27,14 @@ public class Main {
 
         Trainee createdTrainee = traineeService.createProfile(newTrainee);
         System.out.println("\n--- Created Trainee ---");
-        System.out.println("ID: " + createdTrainee.getUserId());
-        System.out.println("Name: " + createdTrainee.getFirstName() + " " + createdTrainee.getLastName());
-        System.out.println("Username: " + createdTrainee.getUsername());
-        System.out.println("Password: " + createdTrainee.getPassword());
+        System.out.println("Username: " + createdTrainee.getUsername()); // Suffix logic handled by service
 
-        // 4. Test Trainee with duplicate name
-        Trainee duplicateTrainee = Trainee.builder()
-                .firstName("John")
-                .lastName("Doe")
-                .address("456 Second Ave")
-                .build();
-
-        Trainee createdDuplicate = traineeService.createProfile(duplicateTrainee);
-        System.out.println("\n--- Created Duplicate Trainee ---");
-        // This username should have a serial number suffix (e.g., john.doe1)
-        System.out.println("Username: " + createdDuplicate.getUsername());
+        // Demonstrate Trainer retrieval (using data loaded from JSON)
+        Optional<Trainer> trainer = trainerService.selectProfile(101L);
+        trainer.ifPresent(t -> {
+            System.out.println("\n--- Loaded Initial Trainer ---");
+            System.out.println("Name: " + t.getFirstName() + " " + t.getLastName());
+            System.out.println("Specialization: " + t.getSpecialization());
+        });
     }
 }
