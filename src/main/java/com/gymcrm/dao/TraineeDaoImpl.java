@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+// Logging
+import org.slf4j.Logger; // Simple Logging Facade for Java
+import org.slf4j.LoggerFactory;
+
 @Repository // A specialization of @Component
 public class TraineeDaoImpl implements TraineeDao {
     private final Storage storage;
