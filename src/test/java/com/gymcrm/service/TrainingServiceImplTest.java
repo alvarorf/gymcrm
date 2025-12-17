@@ -45,6 +45,7 @@ class TrainingServiceImplTest {
     @DisplayName("SELECT: Should return empty Optional when training is not found")
     void selectProfile_NotFound() {
         // ARRANGE
+        // This test targets the 'else' branch and logger.warn shown in the coverage report
         Long nonExistentId = 99L;
         when(trainingDao.findById(nonExistentId)).thenReturn(Optional.empty());
 
@@ -54,5 +55,26 @@ class TrainingServiceImplTest {
         // ASSERT
         assertFalse(result.isPresent());
         verify(trainingDao, times(1)).findById(nonExistentId);
+    }
+
+    @Test
+    @DisplayName("SELECT: Should return Training profile when training is found")
+    void selectProfile_Found() {
+        // ARRANGE
+        // This test targets the 'if (training.isPresent())' branch and logger.debug shown in the coverage report
+        Long trainingId = 1L;
+        Training training = new Training();
+        training.setId(trainingId);
+        training.setTrainingName("Weightlifting");
+
+        when(trainingDao.findById(trainingId)).thenReturn(Optional.of(training));
+
+        // ACT
+        Optional<Training> result = trainingService.selectProfile(trainingId);
+
+        // ASSERT
+        assertTrue(result.isPresent(), "Training should be present in the result");
+        assertEquals("Weightlifting", result.get().getTrainingName());
+        verify(trainingDao, times(1)).findById(trainingId);
     }
 }

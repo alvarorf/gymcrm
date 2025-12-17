@@ -2,7 +2,8 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainer;
-import com.gymcrm.util.UsernamePasswordGenerator;
+import com.gymcrm.util.UsernameGenerator;
+import com.gymcrm.util.PasswordGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -10,9 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -20,14 +19,11 @@ import static org.mockito.Mockito.*;
 @DisplayName("Trainer service unit tests")
 class TrainerServiceImplTest {
 
-    @Mock
-    private TrainerDao trainerDao;
+    @Mock private TrainerDao trainerDao;
+    @Mock private UsernameGenerator usernameGenerator;
+    @Mock private PasswordGenerator passwordGenerator;
 
-    @Mock
-    private UsernamePasswordGenerator generator;
-
-    @InjectMocks
-    private TrainerServiceImpl trainerService;
+    @InjectMocks private TrainerServiceImpl trainerService;
 
     private Trainer sampleTrainer;
     private final String MOCK_USER = "dwight.schrute";
@@ -35,8 +31,9 @@ class TrainerServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        // Fix for setter injection issue in Mockito
-        trainerService.setGenerator(generator);
+        // Resolve Mockito setter injection issue
+        trainerService.setUsernameGenerator(usernameGenerator);
+        trainerService.setPasswordGenerator(passwordGenerator);
 
         sampleTrainer = new Trainer();
         sampleTrainer.setFirstName("Dwight");
@@ -48,8 +45,8 @@ class TrainerServiceImplTest {
     @DisplayName("CREATE: Should set generated credentials and save trainer")
     void createProfile_Success() {
         // ARRANGE
-        when(generator.generateUsername("Dwight", "Schrute")).thenReturn(MOCK_USER);
-        when(generator.generatePassword()).thenReturn(MOCK_PASS);
+        when(usernameGenerator.generateUsername("Dwight", "Schrute")).thenReturn(MOCK_USER);
+        when(passwordGenerator.generatePassword()).thenReturn(MOCK_PASS);
         when(trainerDao.save(any(Trainer.class))).thenReturn(sampleTrainer);
 
         // ACT
@@ -82,14 +79,14 @@ class TrainerServiceImplTest {
     @DisplayName("SELECT: Should return Trainer when ID exists")
     void selectProfile_Found() {
         // ARRANGE
-        Long id = 102L;
-        when(trainerDao.findById(id)).thenReturn(Optional.of(sampleTrainer));
+        Long testId = 102L;
+        when(trainerDao.findById(testId)).thenReturn(Optional.of(sampleTrainer));
 
         // ACT
-        Optional<Optional<Trainer>> result = Optional.ofNullable(trainerService.selectProfile(id));
+        Optional<Trainer> result = trainerService.selectProfile(testId);
 
         // ASSERT
-        assertTrue(result.get().isPresent());
-        assertEquals("Dwight", result.get().get().getFirstName());
+        assertTrue(result.isPresent());
+        assertEquals("Dwight", result.get().getFirstName());
     }
 }

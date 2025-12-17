@@ -3,7 +3,8 @@ package com.gymcrm.service;
 import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.service.interfaces.TrainerService;
-import com.gymcrm.util.UsernamePasswordGenerator;
+import com.gymcrm.util.UsernameGenerator;
+import com.gymcrm.util.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
@@ -21,9 +22,9 @@ public class TrainerServiceImpl implements TrainerService {
     // "DAO with storage bean should be inserted into services beans using auto wiring")
     private final TrainerDao trainerDao;
 
-    // Dependency injected via Setter (UsernamePasswordGenerator because, by req4:
-    // "The rest of the injections should be done in a setter-based way")
-    private UsernamePasswordGenerator generator; // Must not be final for setter injection to work
+    // Non-Core Dependencies. Must NOT be final, for injection via Setter
+    private UsernameGenerator usernameGenerator;
+    private PasswordGenerator passwordGenerator; // Must not be final for setter injection to work
 
     // Constructor-based injection, we only inject TrainerDao because it is a core dependency
 
@@ -33,19 +34,23 @@ public class TrainerServiceImpl implements TrainerService {
         logger.info("TrainerServiceImpl initialized with constructor injection for DAO.");
     }
 
-    // Setter-based injection for UsernamePasswordGenerator
+    // Setter-based injection for generators
     @Autowired
-    public void setGenerator(UsernamePasswordGenerator generator) {
-        this.generator = generator;
-        logger.info("UsernamePasswordGenerator injected via setter.");
+    public void setUsernameGenerator(UsernameGenerator usernameGenerator) {
+        this.usernameGenerator = usernameGenerator;
+    }
+
+    @Autowired
+    public void setPasswordGenerator(PasswordGenerator passwordGenerator) {
+        this.passwordGenerator = passwordGenerator;
     }
 
     @Override
     public Trainer createProfile(Trainer trainer)
     {
         logger.info("Attempting to create new Trainer profile: {} {}", trainer.getFirstName(), trainer.getLastName());
-        String username = generator.generateUsername(trainer.getFirstName(), trainer.getLastName());
-        String password = generator.generatePassword();
+        String username = usernameGenerator.generateUsername(trainer.getFirstName(), trainer.getLastName());
+        String password = passwordGenerator.generatePassword();
 
         trainer.setUsername(username);
         trainer.setPassword(password);

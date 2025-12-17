@@ -3,7 +3,8 @@ package com.gymcrm.service;
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.service.interfaces.TraineeService;
-import com.gymcrm.util.UsernamePasswordGenerator;
+import com.gymcrm.util.UsernameGenerator;
+import com.gymcrm.util.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.Optional;
@@ -28,8 +29,9 @@ It is a specialization (implementation) of @Component and allows TraineeServiceI
 public class TraineeServiceImpl implements TraineeService {
     // Why final? Because TraineeDao is a core dependency, injected via the constructor
     private final TraineeDao traineeDao;
-    // Non-Core Dependency (UsernamePasswordGenerator). Must NOT be final, for injection via Setter
-    private UsernamePasswordGenerator generator;
+    // Non-Core Dependencies. Must NOT be final, for injection via Setter
+    private UsernameGenerator usernameGenerator;
+    private PasswordGenerator passwordGenerator;
 
     // Logger
     private static final Logger logger = LoggerFactory.getLogger(TraineeServiceImpl.class);
@@ -41,18 +43,23 @@ public class TraineeServiceImpl implements TraineeService {
         logger.info("TraineeServiceImpl initialized with constructor injection for DAO.");
     }
 
-    // Setter-based injection for the non-core dependency (UsernamePasswordGenerator)
+    // Setter-based injection for the non-core dependencies
     @Autowired
-    public void setGenerator(UsernamePasswordGenerator generator) {
-        this.generator = generator;
+    public void setUsernameGenerator(UsernameGenerator usernameGenerator) {
+        this.usernameGenerator = usernameGenerator;
+    }
+
+    @Autowired
+    public void setPasswordGenerator(PasswordGenerator passwordGenerator) {
+        this.passwordGenerator = passwordGenerator;
     }
 
     @Override
     public Trainee createProfile(Trainee trainee)
     {
         logger.info("Attempting to create new Trainee profile: {} {}", trainee.getFirstName(), trainee.getLastName());
-        String username = generator.generateUsername(trainee.getFirstName(), trainee.getLastName());
-        String password = generator.generatePassword();
+        String username = usernameGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName());
+        String password = passwordGenerator.generatePassword();
 
         trainee.setUsername(username);
         trainee.setPassword(password);
