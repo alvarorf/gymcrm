@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 @Repository
 public class TrainerDaoImpl implements TrainerDao {
+    private static final Logger logger = LoggerFactory.getLogger(TrainerDaoImpl.class);
     private final Storage storage;
 
     // Req4: DAO with storage bean should be inserted into services beans using auto wiring.
@@ -29,25 +30,30 @@ public class TrainerDaoImpl implements TrainerDao {
         if (trainer.getUserId() == null) {
             // If the trainer does not exist, we can generate a new user id for them
             trainer.setUserId(storage.getNextTrainerId());
+            logger.debug("Generating new ID {} for Trainer", trainer.getUserId());
         }
         // The put() method in Java's Map interface adds a new key-value pair or
         // update the value if the key already exists: V put(K key, V value)
         storage.getTrainerStorageMap().put(trainer.getUserId(), trainer);
+        logger.info("Trainer saved successfully with ID: {}", trainer.getUserId());
 
         return trainer;
     }
     @Override
     public Optional<Trainer> findById(Long id) {
+        logger.debug("Finding Trainer by ID: {}", id);
         return Optional.ofNullable(storage.getTrainerStorageMap().get(id));
     }
 
     @Override
     public List<Trainer> findAll() {
+        logger.debug("Retrieving all Trainers");
         return new ArrayList<>(storage.getTrainerStorageMap().values());
     }
 
     @Override
     public Optional<Trainer> findByUsername(String username) {
+        logger.debug("Finding Trainer by username: {}", username);
         return storage.getTrainerStorageMap().values().stream()
                 .filter(t -> t.getUsername().equals(username))
                 .findFirst();
