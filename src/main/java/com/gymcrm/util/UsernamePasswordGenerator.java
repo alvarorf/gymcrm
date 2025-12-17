@@ -52,7 +52,7 @@ public class UsernamePasswordGenerator {
         StringBuilder sb = new StringBuilder(10);
         for (int i = 0; i < 10; i++) {
             // From 0 to 9, so length is 10 characters
-            // It randomly selects one character from "chars" at each iteratiom, and appends them
+            // It randomly selects one character from "chars" at each iteration, and appends them
             sb.append(chars.charAt(random.nextInt(chars.length())));
         }
         return sb.toString();
