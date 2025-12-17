@@ -9,6 +9,6 @@ profile.
 public interface TraineeService {
     Trainee createProfile(Trainee trainee);
     Trainee updateProfile(Trainee trainee);
-    Optional<Trainee> selectProfile(Long id);
     void deleteProfile(Long id);
+    Optional<Trainee> selectProfile(Long id);
 }

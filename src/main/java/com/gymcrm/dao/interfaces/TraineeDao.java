@@ -6,7 +6,7 @@ import java.util.Optional;
 
 public interface TraineeDao {
 
-    // Create (save), Select or Read (findById, findAll), Delete (delete) operations
+    // Create/Update (save), Select or Read (findById, findAll), Delete (delete) operations
 
     /*
     All reference types (objects, strings, etc.) are nullable, while primitive types

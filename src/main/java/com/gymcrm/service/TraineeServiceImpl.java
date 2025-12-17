@@ -19,20 +19,24 @@ From: https://docs.spring.io/spring-framework/docs/current/javadoc-api/org/sprin
 @Service:
 Indicates that an annotated class is a "Service", originally defined by Domain-Driven Design (Evans, 2003)
 as "an operation offered as an interface that stands alone in the model, with no encapsulated state."
-
 It is a specialization (implementation) of @Component and allows TraineeServiceImpl to be autodetected through classpath scanning.
-
  */
-@Service  // Could also be @Component
+@Service
 public class TraineeServiceImpl implements TraineeService {
-    // Why final? Because we want a singleton for both
+    // Why final? Because TraineeDao is a core dependency, injected via the constructor
     private final TraineeDao traineeDao;
-    private final UsernamePasswordGenerator generator;
+    // on-Core Dependency (UsernamePasswordGenerator). Must NOT be final, for injection via Setter
+    private UsernamePasswordGenerator generator;
 
-    // Constructor-based injection
-    public TraineeServiceImpl(TraineeDao traineeDao, UsernamePasswordGenerator generator)
+    // Constructor-based injection (only for core dependencies)
+    public TraineeServiceImpl(TraineeDao traineeDao)
     {
         this.traineeDao = traineeDao;
+    }
+
+    // Setter-based injection for the non-core dependency (UsernamePasswordGenerator)
+    @Autowired
+    public void setGenerator(UsernamePasswordGenerator generator) {
         this.generator = generator;
     }
 
@@ -41,7 +45,6 @@ public class TraineeServiceImpl implements TraineeService {
     {
         String username = generator.generateUsername(trainee.getFirstName(), trainee.getLastName());
         String password = generator.generatePassword();
-
 
         trainee.setUsername(username);
         trainee.setPassword(password);
@@ -68,6 +71,4 @@ public class TraineeServiceImpl implements TraineeService {
     {
         traineeDao.delete(id);
     }
-
-
 }

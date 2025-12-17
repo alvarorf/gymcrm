@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TrainerDao {
-    // Trainer Service class should support possibility to create (save)
+    // Trainer Service class should support possibility to create/update (save)
     // update, select(findById, findAll),  Trainer profile.
 
     Trainer save(Trainer trainer);

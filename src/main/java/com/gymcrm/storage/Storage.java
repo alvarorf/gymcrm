@@ -3,6 +3,12 @@ package com.gymcrm.storage;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
+
+import lombok.Getter;
+import org.springframework.beans.factory.annotation.Autowired;
+// We need Qualifier to distinguish between beans of the same type when Spring performs DI
+// Because in AppConfig.java, we have three separate beans, of the same type: Map<Long,?>
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
@@ -12,21 +18,21 @@ import java.util.Map;
 public class Storage {
     // Requirement 2: Common in-memory storage - java map.
     // Each entity stored under a separate namespace.
-    private final Map<Long, Trainee> traineeStorageMap = new HashMap<>();
-    private final Map<Long, Trainer> trainerStorageMap = new HashMap<>();
-    private final Map<Long, Training> trainingStorageMap = new HashMap<>();
+    @Getter
+    private final Map<Long, Trainee> traineeStorageMap;
+    @Getter
+    private final Map<Long, Trainer> trainerStorageMap;
+    @Getter
+    private final Map<Long, Training> trainingStorageMap;
 
-
-    public Map<Long, Trainee> getTraineeStorageMap() {
-        return traineeStorageMap;
-    }
-
-    public Map<Long, Trainer> getTrainerStorageMap() {
-        return trainerStorageMap;
-    }
-
-    public Map<Long, Training> getTrainingStorageMap() {
-        return trainingStorageMap;
+    // We inject the separate Map beans here
+    @Autowired
+    public Storage(@Qualifier("traineeMap") Map<Long, Trainee> traineeStorageMap,
+                   @Qualifier("trainerMap") Map<Long, Trainer> trainerStorageMap,
+                   @Qualifier("trainingMap") Map<Long, Training> trainingStorageMap) {
+        this.traineeStorageMap = traineeStorageMap;
+        this.trainerStorageMap = trainerStorageMap;
+        this.trainingStorageMap = trainingStorageMap;
     }
 
     // Initial ID generator
@@ -58,7 +64,7 @@ public class Storage {
         // TODO: Implement logic to read the file (e.g., JSON) at 'dataPath'
         // and populate the storage maps. This logic may be executed
         // by a BeanPostProcessor or InitializingBean, according to req3.
-        System.out.println("--- Storage initialized with data from: " + dataPath + " ---");
+        System.out.println("--- Storage initialized with data from: " + dataPath.toLowerCase() + " ---");
     }
 
 
