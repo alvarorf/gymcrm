@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,8 +17,13 @@ import java.util.Map;
 @PropertySource("classpath:application.properties") // To load the application.properties file and thus the initial data
 @Configuration
 public class AppConfig {
-    // Requirement: Every storage (java.util.Map) implemented as a separate bean.
+    // Required to resolve ${storage.initial-data-file} in standalone Spring
+    @Bean
+    public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+        return new PropertySourcesPlaceholderConfigurer();
+    }
 
+    // Requirement: Every storage (java.util.Map) implemented as a separate bean.
     @Bean("traineeMap")
     public Map<Long, Trainee> traineeMap() {
         return new HashMap<>();

@@ -27,10 +27,10 @@ All generated getters and setters will be public.
 @SuperBuilder // Required for Builder pattern inheritance
 @NoArgsConstructor(access = AccessLevel.PUBLIC) // It is protected by default
 public class User {
-    private Long UserId;
+    private Long userId;
     private String firstName;
     private String lastName;
     private String username;
     private String password;
-    private boolean isActive = true;
+    private boolean active = true;
 }

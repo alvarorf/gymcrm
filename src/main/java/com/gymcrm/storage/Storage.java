@@ -67,15 +67,11 @@ public class Storage {
      Path to the concrete file should be set using property placeholder and external property file.
      */
     public void loadInitialData(String dataPath) {
-        // TODO: Implement logic to read the file (e.g., JSON) at 'dataPath'
-        // and populate the storage maps. This logic may be executed
-        // by a BeanPostProcessor or InitializingBean, according to req3.
         logger.info("Attempting to load initial data from: {}", dataPath);
         try {
             ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule()); // Required for LocalDate support
+            mapper.registerModule(new JavaTimeModule());
 
-            // Read from classpath if the path starts with classpath: or is a relative resource
             InputStream is = new ClassPathResource(dataPath).getInputStream();
             DataWrapper data = mapper.readValue(is, DataWrapper.class);
 
@@ -84,7 +80,7 @@ public class Storage {
             data.trainers.forEach(t -> trainerStorageMap.put(t.getUserId(), t));
             data.trainings.forEach(t -> trainingStorageMap.put(t.getId(), t));
 
-            // Sync counters to avoid ID collisions with imported data
+            // Sync counters
             traineeIdCounter = traineeStorageMap.keySet().stream().max(Long::compare).orElse(0L) + 1;
             trainerIdCounter = trainerStorageMap.keySet().stream().max(Long::compare).orElse(0L) + 1;
             trainingIdCounter = trainingStorageMap.keySet().stream().max(Long::compare).orElse(0L) + 1;
@@ -92,8 +88,14 @@ public class Storage {
             logger.info("Successfully initialized storage with {} trainees, {} trainers, and {} trainings.",
                     traineeStorageMap.size(), trainerStorageMap.size(), trainingStorageMap.size());
 
+            // Force print to console for debugging
+            System.out.println("STORAGE LOADED: " + trainerStorageMap.size() + " trainers loaded.");
+
         } catch (Exception e) {
             logger.error("Failed to load initial data from path: {}", dataPath, e);
+            // Print error to standard error stream to ensure visibility
+            System.err.println("CRITICAL ERROR: Could not load initial data file.");
+            e.printStackTrace();
         }
     }
 

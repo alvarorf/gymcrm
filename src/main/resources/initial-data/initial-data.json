@@ -6,7 +6,7 @@
       "lastName": "Scott",
       "username": "michael.scott",
       "password": "pass101",
-      "isActive": true,
+      "active": true,
       "specialization": "Motivation"
     },
     {
@@ -15,26 +15,8 @@
       "lastName": "Schrute",
       "username": "dwight.schrute",
       "password": "pass102",
-      "isActive": true,
+      "active": true,
       "specialization": "Martial Arts"
-    },
-    {
-      "userId": 103,
-      "firstName": "Angela",
-      "lastName": "Martin",
-      "username": "angela.martin",
-      "password": "pass103",
-      "isActive": false,
-      "specialization": "Acrobatics"
-    },
-    {
-      "userId": 104,
-      "firstName": "Kevin",
-      "lastName": "Malone",
-      "username": "kevin.malone",
-      "password": "pass104",
-      "isActive": true,
-      "specialization": "Nutrition"
     }
   ],
   "trainees": [
@@ -44,73 +26,23 @@
       "lastName": "Beesly",
       "username": "pam.beesly",
       "password": "pass201",
-      "isActive": true,
+      "active": true,
       "dateOfBirth": "1979-03-25",
       "address": "Scranton, PA"
-    },
-    {
-      "userId": 202,
-      "firstName": "Jim",
-      "lastName": "Halpert",
-      "username": "jim.halpert",
-      "password": "pass202",
-      "isActive": true,
-      "dateOfBirth": "1978-10-01",
-      "address": "Scranton, PA"
-    },
-    {
-      "userId": 203,
-      "firstName": "Ryan",
-      "lastName": "Howard",
-      "username": "ryan.howard",
-      "password": "pass203",
-      "isActive": false,
-      "dateOfBirth": "1980-05-15",
-      "address": "New York, NY"
-    },
-    {
-      "userId": 204,
-      "firstName": "Erin",
-      "lastName": "Hannon",
-      "username": "erin.hannon",
-      "password": "pass204",
-      "isActive": true,
-      "dateOfBirth": "1985-11-09",
-      "address": "Scranton, PA"
     }
-  ],
-  "trainingTypes": [
-    { "id": 1, "trainingTypeName": "Cardio" },
-    { "id": 2, "trainingTypeName": "Strength" },
-    { "id": 3, "trainingTypeName": "Flexibility" }
   ],
   "trainings": [
     {
       "id": 501,
       "traineeId": 201,
       "trainerId": 102,
-      "trainingType": { "id": 2, "trainingTypeName": "Strength" },
       "trainingName": "Krav Maga Basic",
       "trainingDate": "2025-12-10",
-      "trainingDuration": 60
-    },
-    {
-      "id": 502,
-      "traineeId": 202,
-      "trainerId": 101,
-      "trainingType": { "id": 1, "trainingTypeName": "Cardio" },
-      "trainingName": "Morning Run & Jokes",
-      "trainingDate": "2025-12-11",
-      "trainingDuration": 45
-    },
-    {
-      "id": 503,
-      "traineeId": 204,
-      "trainerId": 104,
-      "trainingType": { "id": 3, "trainingTypeName": "Flexibility" },
-      "trainingName": "Basic Stretching",
-      "trainingDate": "2025-12-12",
-      "trainingDuration": 30
+      "trainingDuration": 60,
+      "trainingType": {
+        "id": 2,
+        "trainingTypeName": "Strength"
+      }
     }
   ]
 }
