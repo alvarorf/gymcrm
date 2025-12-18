@@ -6,6 +6,7 @@ Therefore, we shouldn't be able to create a User without a role.
 Additionally, we could later have methods (e.g., for credentials), that accept a generic User type.
 */
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,5 +33,6 @@ public class User {
     private String lastName;
     private String username;
     private String password;
-    private boolean active = true;
+    @JsonProperty("isActive")
+    private boolean isActive = true;
 }

@@ -6,7 +6,7 @@
       "lastName": "Scott",
       "username": "michael.scott",
       "password": "pass101",
-      "active": true,
+      "isActive": true,
       "specialization": "Motivation"
     },
     {
@@ -15,7 +15,7 @@
       "lastName": "Schrute",
       "username": "dwight.schrute",
       "password": "pass102",
-      "active": true,
+      "isActive": true,
       "specialization": "Martial Arts"
     }
   ],
@@ -26,7 +26,7 @@
       "lastName": "Beesly",
       "username": "pam.beesly",
       "password": "pass201",
-      "active": true,
+      "isActive": true,
       "dateOfBirth": "1979-03-25",
       "address": "Scranton, PA"
     }

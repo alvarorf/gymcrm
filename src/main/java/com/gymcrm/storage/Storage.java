@@ -11,15 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 // We need Qualifier to distinguish between beans of the same type when Spring performs DI
 // Because in AppConfig.java, we have three separate beans, of the same type: Map<Long,?>
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
-// To load the initial data
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-
-import java.io.InputStream;
-import java.util.List;
 import java.util.Map;
 
 @Component
@@ -58,51 +51,5 @@ public class Storage {
 
     public Long getNextTrainingId() {
         return trainingIdCounter++;
-    }
-
-
-    /*
-    Req3: Implement the ability to initialize storage with some prepared data from the file
-     during the application start (use spring bean post-processing features).
-     Path to the concrete file should be set using property placeholder and external property file.
-     */
-    public void loadInitialData(String dataPath) {
-        logger.info("Attempting to load initial data from: {}", dataPath);
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            mapper.registerModule(new JavaTimeModule());
-
-            InputStream is = new ClassPathResource(dataPath).getInputStream();
-            DataWrapper data = mapper.readValue(is, DataWrapper.class);
-
-            // Populate Maps
-            data.trainees.forEach(t -> traineeStorageMap.put(t.getUserId(), t));
-            data.trainers.forEach(t -> trainerStorageMap.put(t.getUserId(), t));
-            data.trainings.forEach(t -> trainingStorageMap.put(t.getId(), t));
-
-            // Sync counters
-            traineeIdCounter = traineeStorageMap.keySet().stream().max(Long::compare).orElse(0L) + 1;
-            trainerIdCounter = trainerStorageMap.keySet().stream().max(Long::compare).orElse(0L) + 1;
-            trainingIdCounter = trainingStorageMap.keySet().stream().max(Long::compare).orElse(0L) + 1;
-
-            logger.info("Successfully initialized storage with {} trainees, {} trainers, and {} trainings.",
-                    traineeStorageMap.size(), trainerStorageMap.size(), trainingStorageMap.size());
-
-            // Force print to console for debugging
-            System.out.println("STORAGE LOADED: " + trainerStorageMap.size() + " trainers loaded.");
-
-        } catch (Exception e) {
-            logger.error("Failed to load initial data from path: {}", dataPath, e);
-            // Print error to standard error stream to ensure visibility
-            System.err.println("CRITICAL ERROR: Could not load initial data file.");
-            e.printStackTrace();
-        }
-    }
-
-    // Helper class for Jackson mapping
-    public static class DataWrapper {
-        public List<Trainee> trainees;
-        public List<Trainer> trainers;
-        public List<Training> trainings;
     }
 }

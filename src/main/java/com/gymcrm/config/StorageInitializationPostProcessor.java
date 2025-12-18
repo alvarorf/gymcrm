@@ -1,7 +1,9 @@
 package com.gymcrm.config;
 
 import com.gymcrm.storage.Storage;
+import com.gymcrm.util.DataLoader;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,9 @@ public class StorageInitializationPostProcessor implements BeanPostProcessor
     @Value("${storage.initial-data-file}")
     private String dataPath;
 
+    @Autowired
+    private DataLoader dataLoader;
+
     /**
      * Intercepts the bean after instantiation (but before init methods like InitializingBean.afterPropertiesSet()).
      * We call loadInitialData on the Storage bean here.
@@ -27,7 +32,7 @@ public class StorageInitializationPostProcessor implements BeanPostProcessor
 
             // Call the required method with the injected property path
             System.out.println("Bean-PostProc LOG: Intercepted storage bean for initialization.");
-            storage.loadInitialData(dataPath);
+            dataLoader.loadInitialData(storage, dataPath);
         }
 
         return bean;
