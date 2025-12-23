@@ -17,7 +17,6 @@ public class TrainingServiceImpl implements TrainingService {
     // Core Dependency: DAO, injected via constructor (autowired)
     private final TrainingDao trainingDao;
 
-    @Autowired
     public TrainingServiceImpl(TrainingDao trainingDao) {
         this.trainingDao = trainingDao;
         logger.info("TrainingServiceImpl initialized.");
