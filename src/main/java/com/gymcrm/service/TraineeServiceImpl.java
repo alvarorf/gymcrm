@@ -55,6 +55,13 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    public boolean authenticate(String username, String password) {
+        return traineeDao.findByUsername(username)
+                .map(trainee -> trainee.getPassword().equals(password))
+                .orElse(false);
+    }
+
+    @Override
     public Trainee createProfile(Trainee trainee)
     {
         logger.info("Attempting to create new Trainee profile: {} {}", trainee.getFirstName(), trainee.getLastName());
@@ -84,9 +91,24 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
+    public Optional<Trainee> selectProfile(String username) {
+        logger.info("Selecting Trainee profile by username: {}", username);
+        return traineeDao.findByUsername(username);
+    }
+
+    @Override
     public void deleteProfile(Long id)
     {
         logger.warn("Attempting to delete Trainee profile with ID: {}", id);
         traineeDao.delete(id);
+    }
+
+    @Override
+    public void updatePassword(Long id, String newPassword) {
+        traineeDao.findById(id).ifPresent(trainee -> {
+            trainee.setPassword(newPassword);
+            traineeDao.save(trainee);
+            logger.info("Password updated for Trainee ID: {}", id);
+        });
     }
 }

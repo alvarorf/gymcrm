@@ -7,6 +7,7 @@ Additionally, we could later have methods (e.g., for credentials), that accept a
 */
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -27,12 +28,21 @@ All generated getters and setters will be public.
 @Data // Generates getters, setters, toString, equals/hashCode
 @SuperBuilder // Required for Builder pattern inheritance
 @NoArgsConstructor(access = AccessLevel.PUBLIC) // It is protected by default
+@Table(name = "users")
+@Entity // It is mandatory so that Hibernate knows that this class corresponds to a (persistent) table in the database
 public class User {
+    @Id // It means that the field will be the primary key of this entity
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // It tells hibernate to let the database generate the value automatically (auto increment for the IDENTITY generation type)
     private Long userId;
+    @Column(nullable = false)
     private String firstName;
+    @Column(nullable = false)
     private String lastName;
+    @Column(nullable = false, unique=true)
     private String username;
+    @Column(nullable = false)
     private String password;
     @JsonProperty("isActive")
+    @Column(nullable = false)
     private boolean isActive = true;
 }
