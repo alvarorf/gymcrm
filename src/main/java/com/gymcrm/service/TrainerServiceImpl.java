@@ -5,10 +5,10 @@ import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.service.interfaces.TrainerService;
-import com.gymcrm.util.ServiceAuthenticator;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -32,7 +32,6 @@ public class TrainerServiceImpl implements TrainerService {
     private UsernameGenerator usernameGenerator;
     private PasswordGenerator passwordGenerator;
     private TraineeDao traineeDao;
-    private ServiceAuthenticator authenticator;
 
     // Constructor-based injection, we only inject TrainerDao because it is a core dependency
 
@@ -54,9 +53,6 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Autowired
     public void setTraineeDao(TraineeDao traineeDao) { this.traineeDao = traineeDao; }
-
-    @Autowired
-    public void setAuthenticator(ServiceAuthenticator authenticator) { this.authenticator = authenticator; }
 
     @Override
     public Trainer createProfile(Trainer trainer)
@@ -83,8 +79,8 @@ public class TrainerServiceImpl implements TrainerService {
 
     // For 17. We need to find trainers who are not currently associated with a specific trainee
     @Override
-    public List<Trainer> getUnassignedTrainersByTraineeUsername(String traineeUsername, String authUser, String authPass) {
-        authenticator.validate(authUser, authPass);
+    @PreAuthorize("isAuthenticated()")
+    public List<Trainer> getUnassignedTrainersByTraineeUsername(String traineeUsername) {
         Trainee trainee = traineeDao.findByUsername(traineeUsername)
                 .orElseThrow(() -> new RuntimeException("Trainee not found"));
 
@@ -97,9 +93,9 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public Trainer updateProfile(Trainer trainer, String authUser, String authPass)
+    @PreAuthorize("isAuthenticated()")
+    public Trainer updateProfile(Trainer trainer)
     {
-        authenticator.validate(authUser, authPass);
         logger.info("Attempting to update Trainer profile with ID: {}", trainer.getUserId());
         // Notes (3): Required field validation
         if (trainer.getFirstName() == null || trainer.getLastName() == null) {
@@ -109,23 +105,24 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public Optional<Trainer> selectProfile(Long id, String authUser, String authPass)
+    @PreAuthorize("isAuthenticated()")
+    public Optional<Trainer> selectProfile(Long id)
     {
-        authenticator.validate(authUser, authPass);
         logger.info("Attempting to select Trainer profile with ID: {}", id);
         return trainerDao.findById(id);
     }
 
     @Override
-    public Optional<Trainer> selectProfile(String username, String authUser, String authPass) {
-        authenticator.validate(authUser, authPass);
+    @PreAuthorize("isAuthenticated()")
+    public Optional<Trainer> selectProfile(String username) {
+
         logger.info("Selecting Trainer profile by username: {}", username);
         return trainerDao.findByUsername(username);
     }
 
     @Override
-    public void updatePassword(Long id, String newPassword, String authUser, String authPass) {
-        authenticator.validate(authUser, authPass);
+    @PreAuthorize("isAuthenticated()")
+    public void updatePassword(Long id, String newPassword) {
         trainerDao.findById(id).ifPresent(trainer -> {
             trainer.setPassword(newPassword);
             trainerDao.save(trainer);
@@ -134,8 +131,8 @@ public class TrainerServiceImpl implements TrainerService {
     }
 
     @Override
-    public void toggleActivation(Long id, String authUser, String authPass) {
-        authenticator.validate(authUser, authPass);
+    @PreAuthorize("isAuthenticated()")
+    public void toggleActivation(Long id) {
         trainerDao.findById(id).ifPresent(trainer -> {
             // Req 6: Non-idempotent (Toggles the current state)
             trainer.setActive(!trainer.isActive());

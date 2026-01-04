@@ -5,7 +5,6 @@ import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.dao.interfaces.TrainingDao;
 import com.gymcrm.model.Training;
 import com.gymcrm.service.interfaces.TrainingService;
-import com.gymcrm.util.ServiceAuthenticator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

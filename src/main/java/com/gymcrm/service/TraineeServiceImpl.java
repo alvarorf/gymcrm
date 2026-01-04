@@ -5,7 +5,6 @@ import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.service.interfaces.TraineeService;
-import com.gymcrm.util.ServiceAuthenticator;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
