@@ -32,7 +32,6 @@ class TraineeServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        // Resolve Mockito setter injection issue
         traineeService.setUsernameGenerator(usernameGenerator);
         traineeService.setPasswordGenerator(passwordGenerator);
 

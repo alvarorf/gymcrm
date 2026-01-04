@@ -1,13 +1,22 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.TraineeDao;
+import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
 import com.gymcrm.service.interfaces.TraineeService;
+import com.gymcrm.util.ServiceAuthenticator;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +41,7 @@ public class TraineeServiceImpl implements TraineeService {
     // Non-Core Dependencies. Must NOT be final, for injection via Setter
     private UsernameGenerator usernameGenerator;
     private PasswordGenerator passwordGenerator;
+    private TrainerDao trainerDao;
 
     // Logger
     private static final Logger logger = LoggerFactory.getLogger(TraineeServiceImpl.class);
@@ -45,25 +55,15 @@ public class TraineeServiceImpl implements TraineeService {
 
     // Setter-based injection for the non-core dependencies
     @Autowired
-    public void setUsernameGenerator(UsernameGenerator usernameGenerator) {
-        this.usernameGenerator = usernameGenerator;
-    }
+    public void setUsernameGenerator(UsernameGenerator usernameGenerator) { this.usernameGenerator = usernameGenerator; }
 
     @Autowired
-    public void setPasswordGenerator(PasswordGenerator passwordGenerator) {
-        this.passwordGenerator = passwordGenerator;
-    }
+    public void setPasswordGenerator(PasswordGenerator passwordGenerator) { this.passwordGenerator = passwordGenerator; }
+    @Autowired
+    public void setTrainerDao(TrainerDao trainerDao) { this.trainerDao = trainerDao; }
 
     @Override
-    public boolean authenticate(String username, String password) {
-        return traineeDao.findByUsername(username)
-                .map(trainee -> trainee.getPassword().equals(password))
-                .orElse(false);
-    }
-
-    @Override
-    public Trainee createProfile(Trainee trainee)
-    {
+    public Trainee createProfile(Trainee trainee) {
         logger.info("Attempting to create new Trainee profile: {} {}", trainee.getFirstName(), trainee.getLastName());
         String username = usernameGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName());
         String password = passwordGenerator.generatePassword();
@@ -77,38 +77,89 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public Trainee updateProfile(Trainee trainee)
-    {
+    public boolean authenticate(String username, String password) {
+        logger.debug("Authenticating trainee: {}", username);
+        return traineeDao.findByUsername(username)
+                .map(trainee -> trainee.getPassword().equals(password))
+                .orElse(false);
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public Trainee updateProfile(Trainee trainee) {
         logger.info("Attempting to update Trainee profile with ID: {}", trainee.getUserId());
+        // Notes (3): Required field validation
+        if (trainee.getFirstName() == null || trainee.getLastName() == null) {
+            throw new IllegalArgumentException("First Name and Last Name are required.");
+        }
         return traineeDao.save(trainee);
     }
 
     @Override
-    public Optional<Trainee> selectProfile(Long id)
-    {
-        logger.info("Attempting to select Trainee profile with ID: {}", id);
+    @PreAuthorize("isAuthenticated()")
+    public Optional<Trainee> selectProfile(String targetUser) {
+
+        logger.info("Selecting Trainee profile by username: {}", targetUser);
+        return traineeDao.findByUsername(targetUser);
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public Optional<Trainee> selectProfile(Long id) {
+        logger.info("Selecting Trainee profile by ID: {}", id);
         return traineeDao.findById(id);
     }
 
     @Override
-    public Optional<Trainee> selectProfile(String username) {
-        logger.info("Selecting Trainee profile by username: {}", username);
-        return traineeDao.findByUsername(username);
-    }
-
-    @Override
-    public void deleteProfile(Long id)
-    {
+    @PreAuthorize("isAuthenticated()")
+    public void deleteProfile(Long id) {
         logger.warn("Attempting to delete Trainee profile with ID: {}", id);
         traineeDao.delete(id);
     }
 
     @Override
+    @PreAuthorize("isAuthenticated()")
+    public void deleteProfile(String targetUser) {
+
+        logger.warn("Attempting to delete Trainee profile with username: {}", targetUser);
+        // 13: Delete by username
+        traineeDao.findByUsername(targetUser).ifPresent(t -> traineeDao.delete(t.getUserId()));
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
     public void updatePassword(Long id, String newPassword) {
         traineeDao.findById(id).ifPresent(trainee -> {
             trainee.setPassword(newPassword);
             traineeDao.save(trainee);
             logger.info("Password updated for Trainee ID: {}", id);
         });
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public void toggleActivation(Long id) {
+        traineeDao.findById(id).ifPresent(trainee -> {
+            trainee.setActive(!trainee.isActive());
+            traineeDao.save(trainee);
+            logger.info("Trainee activation status changed to: {}", trainee.isActive());
+        });
+    }
+
+    // 18. Update Trainee's trainers list
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public void updateTraineeTrainers(String traineeUsername, List<String> trainerUsernames) {
+        Trainee trainee = traineeDao.findByUsername(traineeUsername)
+                .orElseThrow(() -> new RuntimeException("Trainee not found"));
+
+        Set<Trainer> newTrainers = trainerUsernames.stream()
+                .map(u -> trainerDao.findByUsername(u).orElse(null))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        trainee.setTrainers(newTrainers);
+        traineeDao.save(trainee);
+        logger.info("Updated trainer list for trainee: {}", traineeUsername);
     }
 }

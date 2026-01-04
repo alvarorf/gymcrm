@@ -5,9 +5,19 @@ Training Service class should support possibility to create/select Training prof
  */
 
 import com.gymcrm.model.Training;
+
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 public interface TrainingService {
     Training createProfile(Training training);
     Optional<Training> selectProfile(Long id);
+    Optional<Training> selectProfile(String trainingName);
+
+    // 14. Get Trainee Trainings List by criteria
+    List<Training> getTraineeTrainings(String username, LocalDate from, LocalDate to, String trainerName, String type);
+
+    // 15. Get Trainer Trainings List by criteria
+    List<Training> getTrainerTrainings(String username, LocalDate from, LocalDate to, String traineeName);
 }

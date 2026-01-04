@@ -59,6 +59,19 @@ public class TraineeDaoImpl implements TraineeDao {
     }
 
     @Override
+    public void delete(String username) {
+        Optional<Trainee> trainee = findByUsername(username);
+        // If present, get the ID and remove from map
+        if (trainee.isPresent()) {
+            Long id = trainee.get().getUserId();
+            storage.getTraineeStorageMap().remove(id);
+            logger.info("Trainee with username {} and ID {} deleted successfully", username, id);
+        } else {
+            logger.warn("Delete failed: No trainee found with username {}", username);
+        }
+    }
+
+    @Override
     public Optional<Trainee> findByUsername(String username) {
         logger.debug("Finding Trainee by username: {}", username);
         return storage.getTraineeStorageMap().values().stream()

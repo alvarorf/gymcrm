@@ -10,6 +10,7 @@ public interface TrainingDao {
     // select(findById, findAll),  Training profile.
     Training save(Training training);
     Optional<Training> findById(Long id);
+    Optional<Training> findByName(String trainingName);
     List<Training> findAll();
 
 }

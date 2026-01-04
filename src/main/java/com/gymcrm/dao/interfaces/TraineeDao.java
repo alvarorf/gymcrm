@@ -16,6 +16,7 @@ public interface TraineeDao {
     Optional<Trainee> findById(Long id);
     List<Trainee> findAll();
     void delete(Long id);
+    void delete(String username);
 
     // Finder for username (for requirement 7)
     Optional<Trainee> findByUsername(String username);

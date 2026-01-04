@@ -46,6 +46,14 @@ public class TrainingDaoImpl implements TrainingDao {
     }
 
     @Override
+    public Optional<Training> findByName(String trainingName) {
+        logger.debug("Finding Training by name: {}", trainingName);
+        return storage.getTrainingStorageMap().values().stream()
+                .filter(t -> t.getTrainingName().equalsIgnoreCase(trainingName))
+                .findFirst();
+    }
+
+    @Override
     public List<Training> findAll() {
         logger.debug("Retrieving all Trainings");
         return new ArrayList<>(storage.getTrainingStorageMap().values());
