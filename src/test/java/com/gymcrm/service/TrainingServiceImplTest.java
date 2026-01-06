@@ -35,6 +35,7 @@ class TrainingServiceImplTest {
     private Training sampleTraining;
     private Trainee sampleTrainee;
     private Trainer sampleTrainer;
+    private final Long TRAINING_ID = 100L;
 
     @BeforeEach
     void setUp() {
@@ -43,7 +44,7 @@ class TrainingServiceImplTest {
         trainingService.setTrainerDao(trainerDao);
 
         sampleTrainee = new Trainee();
-        sampleTrainee.setUserId(1L);
+        sampleTrainee.setUserId(TRAINING_ID);
         sampleTrainee.setUsername("john.doe");
         sampleTrainee.setFirstName("John");
 
@@ -56,13 +57,13 @@ class TrainingServiceImplTest {
         type.setTrainingTypeName("Cardio");
 
         sampleTraining = new Training();
-        sampleTraining.setId(100L);
+        sampleTraining.setId(TRAINING_ID);
         sampleTraining.setTrainingName("Morning Run");
         sampleTraining.setTrainingDate(LocalDate.of(2025, 1, 1));
-        sampleTraining.setTraineeId(1L);
-        sampleTrainer.setUserId(10L); // Ensure ID matches for the filter
-        sampleTraining.setTrainerId(10L);
+        sampleTraining.setTrainee(sampleTrainee);
+        sampleTraining.setTrainer(sampleTrainer);
         sampleTraining.setTrainingType(type);
+        sampleTraining.setTrainingDuration(60);
     }
 
     @Test
@@ -120,9 +121,8 @@ class TrainingServiceImplTest {
         LocalDate from = LocalDate.of(2024, 12, 31);
         LocalDate to = LocalDate.of(2025, 1, 2);
 
-        // Corrected stubbing: We return a List directly
         when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(traineeDao.findById(1L)).thenReturn(Optional.of(sampleTrainee));
+        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainee));
 
         // ACT
         List<Training> result = trainingService.getTraineeTrainings(username, from, to, null, "Cardio");
@@ -130,7 +130,7 @@ class TrainingServiceImplTest {
         // ASSERT
         assertFalse(result.isEmpty());
         assertEquals(1, result.size());
-        assertEquals("Morning Run", result.get(0).getTrainingName());
+        verify(traineeDao).findById(TRAINING_ID);
     }
 
     @Test
@@ -139,7 +139,7 @@ class TrainingServiceImplTest {
         // ARRANGE
         String trainerUsername = "coach.bob";
         when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(trainerDao.findById(10L)).thenReturn(Optional.of(sampleTrainer));
+        when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
 
         // ACT
         List<Training> result = trainingService.getTrainerTrainings(trainerUsername, null, null, null);
@@ -147,7 +147,7 @@ class TrainingServiceImplTest {
         // ASSERT
         assertEquals(1, result.size());
         assertEquals("coach.bob", sampleTrainer.getUsername());
-        verify(trainerDao, atLeastOnce()).findById(10L);
+        verify(trainerDao, atLeastOnce()).findById(TRAINING_ID);
     }
 
     @Test
@@ -155,7 +155,7 @@ class TrainingServiceImplTest {
     void getTraineeTrainings_NoMatch() {
         // ARRANGE
         when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(traineeDao.findById(1L)).thenReturn(Optional.of(sampleTrainee));
+        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainee));
 
         // ACT
         // Searching for a username that doesn't match the mocked trainee

@@ -104,4 +104,20 @@ class TraineeDaoImplTest {
         assertEquals(username, result.get().getUsername());
         verify(traineeRepository, times(1)).findByUsername(username);
     }
+
+    @Test
+    @DisplayName("6. DELETE (USERNAME): Should call repository deleteByUsername.")
+    void deleteByUsername_shouldCallRepository() {
+        // ARRANGE
+        String username = "john.doe";
+        doNothing().when(traineeRepository).deleteByUsername(username);
+
+        // ACT
+        traineeDao.delete(username);
+
+        // ASSERT
+        verify(traineeRepository, times(1)).deleteByUsername(username);
+    }
+
+
 }

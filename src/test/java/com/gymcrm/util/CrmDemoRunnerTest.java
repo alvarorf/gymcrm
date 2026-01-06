@@ -3,6 +3,7 @@ package com.gymcrm.util;
 import com.gymcrm.facade.GymFacade;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
+import com.gymcrm.model.TrainingType;
 import com.gymcrm.service.interfaces.TraineeService;
 import com.gymcrm.service.interfaces.TrainerService;
 import org.junit.jupiter.api.DisplayName;
@@ -10,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
@@ -34,11 +36,14 @@ class CrmDemoRunnerTest {
         // ARRANGE
         CrmDemoRunner runner = new CrmDemoRunner();
 
+        TrainingType motivationType = new TrainingType();
+        motivationType.setTrainingTypeName("Motivation");
+
         Trainee mockTrainee = Trainee.builder().username("john.doe").build();
         Trainer mockTrainer = Trainer.builder()
                 .firstName("Michael")
                 .lastName("Scott")
-                .specialization("Motivation")
+                .specialization(motivationType) // Fixed type
                 .build();
 
         when(gymFacade.getTraineeService()).thenReturn(traineeService);
@@ -53,5 +58,8 @@ class CrmDemoRunnerTest {
         // ASSERT
         verify(traineeService, times(1)).createProfile(any(Trainee.class));
         verify(trainerService, times(1)).selectProfile(101L);
+
+        // Cleanup security context after test
+        SecurityContextHolder.clearContext();
     }
 }

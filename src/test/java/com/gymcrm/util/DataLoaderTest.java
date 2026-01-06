@@ -3,6 +3,7 @@ package com.gymcrm.util;
 import com.gymcrm.repositories.TraineeRepository;
 import com.gymcrm.repositories.TrainerRepository;
 import com.gymcrm.repositories.TrainingRepository;
+import com.gymcrm.repositories.TrainingTypeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -18,17 +19,16 @@ public class DataLoaderTest {
 
     private DataLoader dataLoader;
 
-    @Mock
-    private TraineeRepository traineeRepository;
-    @Mock
-    private TrainerRepository trainerRepository;
-    @Mock
-    private TrainingRepository trainingRepository;
+    @Mock private TraineeRepository traineeRepository;
+    @Mock private TrainerRepository trainerRepository;
+    @Mock private TrainingRepository trainingRepository;
+    @Mock private TrainingTypeRepository trainingTypeRepository;
 
     @BeforeEach
     void setUp() {
         // ARRANGE
-        dataLoader = new DataLoader(traineeRepository, trainerRepository, trainingRepository);
+        dataLoader =
+                new DataLoader(traineeRepository, trainerRepository, trainingRepository, trainingTypeRepository);
     }
 
     @Test
@@ -42,6 +42,7 @@ public class DataLoaderTest {
 
         // ASSERT
         // Verify that each repository saveAll method was called
+        verify(trainingTypeRepository, times(1)).saveAll(anyList());
         verify(trainerRepository, times(1)).saveAll(anyList());
         verify(traineeRepository, times(1)).saveAll(anyList());
         verify(trainingRepository, times(1)).saveAll(anyList());
@@ -58,6 +59,7 @@ public class DataLoaderTest {
 
         // ASSERT
         // Verify no save operations were attempted
+        verify(trainingTypeRepository, never()).saveAll(anyList());
         verify(trainerRepository, never()).saveAll(anyList());
         verify(traineeRepository, never()).saveAll(anyList());
         verify(trainingRepository, never()).saveAll(anyList());

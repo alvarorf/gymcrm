@@ -1,8 +1,7 @@
 package com.gymcrm.dao;
 
 import com.gymcrm.model.Training;
-import com.gymcrm.storage.Storage;
-import org.junit.jupiter.api.BeforeEach;
+import com.gymcrm.repositories.TrainingRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,74 +9,87 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("Training DAO Unit Tests")
 class TrainingDaoImplTest {
 
     @Mock
-    private Storage storage;
+    private TrainingRepository trainingRepository;
 
     @InjectMocks
     private TrainingDaoImpl trainingDao;
 
-    private Map<Long, Training> trainingMap;
-
-    @BeforeEach
-    void setUp() {
-        trainingMap = new HashMap<>();
-        lenient().when(storage.getTrainingStorageMap()).thenReturn(trainingMap);
-    }
-
     @Test
-    @DisplayName("1. SAVE: Should generate new ID and save when training ID is null.")
-    void save_shouldGenerateNewId_whenIdIsNull() {
+    @DisplayName("1. SAVE: Should persist training using repository")
+    void save_shouldCallRepository() {
         // ARRANGE
         Training training = new Training();
-        training.setTrainingName("Yoga Session");
-        when(storage.getNextTrainingId()).thenReturn(500L);
+        training.setTrainingName("Yoga Morning");
+        when(trainingRepository.save(training)).thenReturn(training);
 
         // ACT
-        Training savedTraining = trainingDao.save(training);
+        Training result = trainingDao.save(training);
 
         // ASSERT
-        assertEquals(500L, savedTraining.getId());
-        assertTrue(trainingMap.containsKey(500L));
+        assertNotNull(result);
+        assertEquals("Yoga Morning", result.getTrainingName());
+        verify(trainingRepository, times(1)).save(training);
     }
 
     @Test
-    @DisplayName("2. SELECT: Should return Optional empty when training ID does not exist.")
-    void findById_shouldReturnOptionalEmpty_whenIdDoesNotExist() {
+    @DisplayName("2. FIND BY NAME: Should return training when name matches")
+    void findByName_shouldReturnOptional() {
         // ARRANGE
-        Long id = 999L;
+        String name = "Power Lifting";
+        Training training = new Training();
+        training.setTrainingName(name);
+        when(trainingRepository.findByTrainingName(name)).thenReturn(Optional.of(training));
 
         // ACT
-        Optional<Training> result = trainingDao.findById(id);
+        Optional<Optional<Training>> result = Optional.ofNullable(trainingDao.findByName(name));
 
         // ASSERT
-        assertTrue(result.isEmpty());
+        assertTrue(result.get().isPresent());
+        assertEquals(name, result.get().get().getTrainingName());
+        verify(trainingRepository, times(1)).findByTrainingName(name);
     }
 
     @Test
-    @DisplayName("3. SELECT ALL: Should return a list containing all trainings from storage.")
-    void findAll_shouldReturnAllTrainings() {
+    @DisplayName("3. FIND ALL: Should return list of all trainings")
+    void findAll_shouldReturnList() {
         // ARRANGE
-        Training t1 = new Training(); t1.setId(501L);
-        Training t2 = new Training(); t2.setId(502L);
-        trainingMap.put(501L, t1);
-        trainingMap.put(502L, t2);
+        List<Training> trainings = List.of(new Training(), new Training());
+        when(trainingRepository.findAll()).thenReturn(trainings);
 
         // ACT
         List<Training> result = trainingDao.findAll();
 
         // ASSERT
         assertEquals(2, result.size());
-        verify(storage, atLeastOnce()).getTrainingStorageMap();
+        verify(trainingRepository, times(1)).findAll();
+    }
+
+    @Test
+    @DisplayName("4. FIND BY ID: Should return training when ID exists in repository")
+    void findById_shouldReturnTraining() {
+        // ARRANGE
+        Long id = 500L;
+        Training training = new Training();
+        training.setId(id);
+        when(trainingRepository.findById(id)).thenReturn(Optional.of(training));
+
+        // ACT
+        Optional<Training> result = trainingDao.findById(id);
+
+        // ASSERT
+        assertTrue(result.isPresent());
+        assertEquals(id, result.get().getId());
+        verify(trainingRepository, times(1)).findById(id);
     }
 }

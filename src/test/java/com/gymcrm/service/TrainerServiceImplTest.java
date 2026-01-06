@@ -4,6 +4,7 @@ import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
+import com.gymcrm.model.TrainingType;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -46,13 +46,17 @@ class TrainerServiceImplTest {
         trainerService.setPasswordGenerator(passwordGenerator);
         trainerService.setTraineeDao(traineeDao);
 
+        TrainingType mockTrainingType = new TrainingType();
+        mockTrainingType.setId(1L);
+        mockTrainingType.setTrainingTypeName("Martial Arts");
+
         sampleTrainer = new Trainer();
         sampleTrainer.setUserId(TEST_ID);
         sampleTrainer.setFirstName("Dwight");
         sampleTrainer.setLastName("Schrute");
         sampleTrainer.setUsername(MOCK_USER);
         sampleTrainer.setPassword(MOCK_PASS);
-        sampleTrainer.setSpecialization("Martial Arts");
+        sampleTrainer.setSpecialization(mockTrainingType);
         sampleTrainer.setActive(true);
     }
 
@@ -62,7 +66,7 @@ class TrainerServiceImplTest {
         // ARRANGE
         when(usernameGenerator.generateUsername("Dwight", "Schrute")).thenReturn(MOCK_USER);
         when(passwordGenerator.generatePassword()).thenReturn(MOCK_PASS);
-        when(trainerDao.save(any(Trainer.class))).thenReturn(sampleTrainer);
+        when(trainerDao.save(any(Trainer.class))).thenAnswer(i -> i.getArguments()[0]);
 
         // ACT
         Trainer result = trainerService.createProfile(sampleTrainer);
@@ -71,7 +75,8 @@ class TrainerServiceImplTest {
         assertAll("Verify profile creation",
                 () -> assertEquals(MOCK_USER, result.getUsername()),
                 () -> assertEquals(MOCK_PASS, result.getPassword()),
-                () -> verify(trainerDao, times(1)).save(sampleTrainer)
+                () -> assertNotNull(result.getSpecialization()),
+                () -> assertEquals("Martial Arts", result.getSpecialization().getTrainingTypeName())
         );
     }
 
