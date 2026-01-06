@@ -1,8 +1,7 @@
 package com.gymcrm.dao;
 
 import com.gymcrm.model.Trainee;
-import com.gymcrm.storage.Storage;
-import org.junit.jupiter.api.BeforeEach;
+import com.gymcrm.repositories.TraineeRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,9 +9,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -22,43 +20,36 @@ import static org.mockito.Mockito.*;
 class TraineeDaoImplTest {
 
     @Mock
-    private Storage storage;
+    private TraineeRepository traineeRepository;
 
     @InjectMocks
     private TraineeDaoImpl traineeDao;
 
-    private Map<Long, Trainee> traineeMap;
-
-    @BeforeEach
-    void setUp() {
-        traineeMap = new HashMap<>();
-        lenient().when(storage.getTraineeStorageMap()).thenReturn(traineeMap);
-    }
-
     @Test
-    @DisplayName("1. SAVE: Should generate ID when userId is null.")
-    void save_shouldGenerateId_whenIdIsNull() {
+    @DisplayName("1. SAVE: Should return saved trainee with database-generated ID.")
+    void save_shouldReturnSavedTrainee() {
         // ARRANGE
         Trainee trainee = Trainee.builder().firstName("John").lastName("Doe").build();
-        when(storage.getNextTraineeId()).thenReturn(1L);
+        Trainee savedTrainee = Trainee.builder().userId(1L).firstName("John").lastName("Doe").build();
+
+        when(traineeRepository.save(trainee)).thenReturn(savedTrainee);
 
         // ACT
-        Trainee savedTrainee = traineeDao.save(trainee);
+        Trainee result = traineeDao.save(trainee);
 
         // ASSERT
-        assertNotNull(savedTrainee.getUserId());
-        assertEquals(1L, savedTrainee.getUserId());
-        assertTrue(traineeMap.containsKey(1L));
-        verify(storage, times(1)).getNextTraineeId();
+        assertNotNull(result.getUserId());
+        assertEquals(1L, result.getUserId());
+        verify(traineeRepository, times(1)).save(trainee);
     }
 
     @Test
-    @DisplayName("2. SELECT: Should return Trainee when ID exists.")
+    @DisplayName("2. SELECT: Should delegate to repository findById.")
     void findById_shouldReturnTrainee_whenExists() {
         // ARRANGE
         Long id = 1L;
         Trainee trainee = Trainee.builder().userId(id).username("john.doe").build();
-        traineeMap.put(id, trainee);
+        when(traineeRepository.findById(id)).thenReturn(Optional.of(trainee));
 
         // ACT
         Optional<Trainee> result = traineeDao.findById(id);
@@ -66,43 +57,44 @@ class TraineeDaoImplTest {
         // ASSERT
         assertTrue(result.isPresent());
         assertEquals("john.doe", result.get().getUsername());
+        verify(traineeRepository, times(1)).findById(id);
     }
 
     @Test
-    @DisplayName("3. SELECT ALL: Should return all Trainees from storage.")
+    @DisplayName("3. SELECT ALL: Should return all Trainees from repository.")
     void findAll_shouldReturnAllTrainees() {
         // ARRANGE
-        traineeMap.put(1L, Trainee.builder().userId(1L).build());
-        traineeMap.put(2L, Trainee.builder().userId(2L).build());
+        List<Trainee> trainees = Arrays.asList(new Trainee(), new Trainee());
+        when(traineeRepository.findAll()).thenReturn(trainees);
 
         // ACT
         List<Trainee> result = traineeDao.findAll();
 
         // ASSERT
         assertEquals(2, result.size());
+        verify(traineeRepository, times(1)).findAll();
     }
 
     @Test
-    @DisplayName("4. DELETE: Should remove trainee from storage map.")
-    void delete_shouldRemoveTraineeFromStorage() {
+    @DisplayName("4. DELETE: Should call repository deleteById.")
+    void delete_shouldCallRepositoryDelete() {
         // ARRANGE
         Long id = 1L;
-        traineeMap.put(id, Trainee.builder().userId(id).build());
 
         // ACT
         traineeDao.delete(id);
 
         // ASSERT
-        assertFalse(traineeMap.containsKey(id));
+        verify(traineeRepository, times(1)).deleteById(id);
     }
 
     @Test
-    @DisplayName("5. SELECT BY USERNAME: Should return Trainee when username matches.")
-    void findByUsername_shouldReturnTrainee_whenUsernameMatches() {
+    @DisplayName("5. SELECT BY USERNAME: Should call repository findByUsername.")
+    void findByUsername_shouldReturnTrainee() {
         // ARRANGE
         String username = "test.user";
         Trainee trainee = Trainee.builder().userId(1L).username(username).build();
-        traineeMap.put(1L, trainee);
+        when(traineeRepository.findByUsername(username)).thenReturn(Optional.of(trainee));
 
         // ACT
         Optional<Trainee> result = traineeDao.findByUsername(username);
@@ -110,5 +102,6 @@ class TraineeDaoImplTest {
         // ASSERT
         assertTrue(result.isPresent());
         assertEquals(username, result.get().getUsername());
+        verify(traineeRepository, times(1)).findByUsername(username);
     }
 }

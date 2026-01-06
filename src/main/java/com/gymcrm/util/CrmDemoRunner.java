@@ -3,6 +3,9 @@ package com.gymcrm.util;
 import com.gymcrm.facade.GymFacade;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.Optional;
@@ -11,6 +14,11 @@ import java.util.Optional;
 public class CrmDemoRunner {
 
     public void runDemo(GymFacade gym) {
+        // Manually set an Authentication object ---
+        UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                "system_admin", null, AuthorityUtils.createAuthorityList("ROLE_ADMIN"));
+        SecurityContextHolder.getContext().setAuthentication(auth);
+
         System.out.println("--- Gym CRM system initialized via Facade ---");
 
         // Test Trainee Creation

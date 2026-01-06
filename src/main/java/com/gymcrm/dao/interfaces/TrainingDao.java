@@ -12,5 +12,4 @@ public interface TrainingDao {
     Optional<Training> findById(Long id);
     Optional<Training> findByName(String trainingName);
     List<Training> findAll();
-
 }

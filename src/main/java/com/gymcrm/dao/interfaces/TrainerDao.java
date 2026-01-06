@@ -1,10 +1,12 @@
 package com.gymcrm.dao.interfaces;
 
 import com.gymcrm.model.Trainer;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface TrainerDao {
     // Trainer Service class should support possibility to create/update (save)
     // update, select(findById, findAll),  Trainer profile.

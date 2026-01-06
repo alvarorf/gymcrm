@@ -1,11 +1,5 @@
 package com.gymcrm.model;
 
-/*
-It makes that User is an abstract class the specifications do not require its instantiation
-Therefore, we shouldn't be able to create a User without a role.
-Additionally, we could later have methods (e.g., for credentials), that accept a generic User type.
-*/
-
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -29,7 +23,9 @@ All generated getters and setters will be public.
 @SuperBuilder // Required for Builder pattern inheritance
 @NoArgsConstructor(access = AccessLevel.PUBLIC) // It is protected by default
 @Table(name = "users")
+@Inheritance(strategy = InheritanceType.JOINED) // Will create a separate table for Trainees, Trainers, Users
 @Entity // It is mandatory so that Hibernate knows that this class corresponds to a (persistent) table in the database
+@DiscriminatorColumn(name = "user_type", discriminatorType = DiscriminatorType.STRING)
 public class User {
     @Id // It means that the field will be the primary key of this entity
     @GeneratedValue(strategy = GenerationType.IDENTITY) // It tells hibernate to let the database generate the value automatically (auto increment for the IDENTITY generation type)

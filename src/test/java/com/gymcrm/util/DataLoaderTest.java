@@ -1,7 +1,8 @@
 package com.gymcrm.util;
 
-import com.gymcrm.model.Trainee;
-import com.gymcrm.storage.Storage;
+import com.gymcrm.repositories.TraineeRepository;
+import com.gymcrm.repositories.TrainerRepository;
+import com.gymcrm.repositories.TrainingRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,11 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -22,45 +19,47 @@ public class DataLoaderTest {
     private DataLoader dataLoader;
 
     @Mock
-    private Storage storage;
-
-    private Map<Long, Trainee> traineeMap;
+    private TraineeRepository traineeRepository;
+    @Mock
+    private TrainerRepository trainerRepository;
+    @Mock
+    private TrainingRepository trainingRepository;
 
     @BeforeEach
     void setUp() {
-        dataLoader = new DataLoader();
-        traineeMap = new HashMap<>();
+        // ARRANGE
+        dataLoader = new DataLoader(traineeRepository, trainerRepository, trainingRepository);
     }
 
     @Test
-    @DisplayName("1. LOAD: Should populate storage maps when valid JSON path is provided.")
-    void loadInitialData_shouldPopulateMaps_whenValidPath() {
+    @DisplayName("1. LOAD: Should persist all entities to DB when valid JSON path is provided.")
+    void loadInitialData_shouldPersistToAllRepositories() {
         // ARRANGE
-        // Path must include the sub-folder as defined in resources
         String validPath = "initial-data/initial-data.json";
-        when(storage.getTraineeStorageMap()).thenReturn(traineeMap);
-        when(storage.getTrainerStorageMap()).thenReturn(new HashMap<>());
-        when(storage.getTrainingStorageMap()).thenReturn(new HashMap<>());
 
         // ACT
-        dataLoader.loadInitialData(storage, validPath);
+        dataLoader.loadInitialData(validPath);
 
         // ASSERT
-        assertFalse(traineeMap.isEmpty(), "Trainee map should not be empty after loading valid data");
-        assertTrue(traineeMap.containsKey(201L), "Trainee with ID 201 should exist in storage");
-        verify(storage, atLeastOnce()).getTraineeStorageMap();
+        // Verify that each repository saveAll method was called
+        verify(trainerRepository, times(1)).saveAll(anyList());
+        verify(traineeRepository, times(1)).saveAll(anyList());
+        verify(trainingRepository, times(1)).saveAll(anyList());
     }
 
     @Test
-    @DisplayName("2. ERROR: Should handle non-existent file path gracefully without throwing exception.")
+    @DisplayName("2. ERROR: Should not interact with repositories when file path is invalid.")
     void loadInitialData_shouldHandleFileNotFound() {
         // ARRANGE
-        String invalidPath = "wrong-folder/missing-file.json";
+        String invalidPath = "invalid/path.json";
 
         // ACT
-        dataLoader.loadInitialData(storage, invalidPath);
+        dataLoader.loadInitialData(invalidPath);
 
         // ASSERT
-        assertTrue(traineeMap.isEmpty(), "Maps should remain empty when file is not found");
+        // Verify no save operations were attempted
+        verify(trainerRepository, never()).saveAll(anyList());
+        verify(traineeRepository, never()).saveAll(anyList());
+        verify(trainingRepository, never()).saveAll(anyList());
     }
 }

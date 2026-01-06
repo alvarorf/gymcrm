@@ -80,11 +80,11 @@ public class TrainingServiceImpl implements TrainingService {
     @PreAuthorize("isAuthenticated()")
     public List<Training> getTraineeTrainings(String username, LocalDate from, LocalDate to, String trainerName, String type) {
         return trainingDao.findAll().stream()
-                .filter(t -> traineeDao.findById(t.getTraineeId())
+                .filter(t -> traineeDao.findById(t.getId())
                         .map(trainee -> trainee.getUsername().equals(username)).orElse(false))
                 .filter(t -> (from == null || !t.getTrainingDate().isBefore(from)))
                 .filter(t -> (to == null || !t.getTrainingDate().isAfter(to)))
-                .filter(t -> (trainerName == null || trainerDao.findById(t.getTrainerId())
+                .filter(t -> (trainerName == null || trainerDao.findById(t.getId())
                         .map(tr -> tr.getFirstName().equalsIgnoreCase(trainerName)).orElse(false)))
                 .filter(t -> (type == null || t.getTrainingType().getTrainingTypeName().equalsIgnoreCase(type)))
                 .collect(Collectors.toList());
@@ -95,11 +95,11 @@ public class TrainingServiceImpl implements TrainingService {
     @PreAuthorize("isAuthenticated()")
     public List<Training> getTrainerTrainings(String username, LocalDate from, LocalDate to, String traineeName) {
         return trainingDao.findAll().stream()
-                .filter(t -> trainerDao.findById(t.getTrainerId())
+                .filter(t -> trainerDao.findById(t.getId())
                         .map(trainer -> trainer.getUsername().equals(username)).orElse(false))
                 .filter(t -> (from == null || !t.getTrainingDate().isBefore(from)))
                 .filter(t -> (to == null || !t.getTrainingDate().isAfter(to)))
-                .filter(t -> (traineeName == null || traineeDao.findById(t.getTraineeId())
+                .filter(t -> (traineeName == null || traineeDao.findById(t.getId())
                         .map(tr -> tr.getFirstName().equalsIgnoreCase(traineeName)).orElse(false)))
                 .collect(Collectors.toList());
     }

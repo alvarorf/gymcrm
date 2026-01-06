@@ -13,6 +13,8 @@ import java.util.Set;
 // So that the test class can instantiate new Trainee() and the Spring container can use it for reflection
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 @Entity
+@Table(name = "trainees")
+@DiscriminatorValue("TRAINEE")
 public class Trainee extends User {
     @Column
     private LocalDate dateOfBirth;
@@ -36,7 +38,4 @@ public class Trainee extends User {
     @OneToMany(mappedBy = "trainee", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private Set<Training> trainings;
-
-
-
 }

@@ -1,9 +1,12 @@
 package com.gymcrm.dao.interfaces;
 
 import com.gymcrm.model.Trainee;
+import org.springframework.stereotype.Repository;
+
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface TraineeDao {
 
     // Create/Update (save), Select or Read (findById, findAll), Delete (delete) operations
@@ -20,6 +23,4 @@ public interface TraineeDao {
 
     // Finder for username (for requirement 7)
     Optional<Trainee> findByUsername(String username);
-
-
 }

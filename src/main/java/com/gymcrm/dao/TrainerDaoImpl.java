@@ -2,60 +2,51 @@ package com.gymcrm.dao;
 
 import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainer;
-import com.gymcrm.storage.Storage;
+import com.gymcrm.repositories.TrainerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 // Logging
 import org.slf4j.Logger; // Simple Logging Facade for Java
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 @Repository
 public class TrainerDaoImpl implements TrainerDao {
     private static final Logger logger = LoggerFactory.getLogger(TrainerDaoImpl.class);
-    private final Storage storage;
+    private final TrainerRepository trainerRepository;
 
-    // Req4: DAO with storage bean should be inserted into services beans using auto wiring.
     @Autowired
-    public TrainerDaoImpl(Storage storage) {
-        this.storage = storage;
+    public TrainerDaoImpl(TrainerRepository trainerRepository) {
+        this.trainerRepository = trainerRepository;
     }
 
     @Override
+    @Transactional
     public Trainer save(Trainer trainer) {
-        if (trainer.getUserId() == null) {
-            // If the trainer does not exist, we can generate a new user id for them
-            trainer.setUserId(storage.getNextTrainerId());
-            logger.debug("Generating new ID {} for Trainer", trainer.getUserId());
-        }
-        // The put() method in Java's Map interface adds a new key-value pair or
-        // update the value if the key already exists: V put(K key, V value)
-        storage.getTrainerStorageMap().put(trainer.getUserId(), trainer);
-        logger.info("Trainer saved successfully with ID: {}", trainer.getUserId());
-
-        return trainer;
+        // ID generation is handled by the database (Identity) upon save
+        Trainer savedTrainer = trainerRepository.save(trainer);
+        logger.info("Trainer saved successfully with ID: {}", savedTrainer.getUserId());
+        return savedTrainer;
     }
     @Override
     public Optional<Trainer> findById(Long id) {
         logger.debug("Finding Trainer by ID: {}", id);
-        return Optional.ofNullable(storage.getTrainerStorageMap().get(id));
+        return trainerRepository.findById(id);
     }
 
     @Override
     public List<Trainer> findAll() {
         logger.debug("Retrieving all Trainers");
-        return new ArrayList<>(storage.getTrainerStorageMap().values());
+        return trainerRepository.findAll();
     }
 
     @Override
     public Optional<Trainer> findByUsername(String username) {
         logger.debug("Finding Trainer by username: {}", username);
-        return storage.getTrainerStorageMap().values().stream()
-                .filter(t -> t.getUsername().equals(username))
-                .findFirst();
+        return trainerRepository.findByUsername(username);
     }
 }

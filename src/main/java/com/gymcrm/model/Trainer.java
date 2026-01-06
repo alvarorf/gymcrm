@@ -13,11 +13,12 @@ import java.util.Set;
 @SuperBuilder // Required for Builder pattern inheritance
 @NoArgsConstructor
 @Entity
-@PrimaryKeyJoinColumn(name = "userId")
+@Table(name = "trainers")
+@DiscriminatorValue("TRAINER")
 public class Trainer extends User {
     @ManyToOne
-    @JoinColumn(name = "typeId") // Foreign key that maps to TrainingType entity
-    private String specialization;
+    @JoinColumn(name = "trainingTypeId", nullable = false) // Foreign key that maps to TrainingType entity
+    private TrainingType specialization;
 
     @OneToMany(mappedBy = "trainer")
     @ToString.Exclude

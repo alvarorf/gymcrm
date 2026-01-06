@@ -1,6 +1,8 @@
 package com.gymcrm.service;
 
+import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
+import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
@@ -11,7 +13,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -20,6 +28,7 @@ import static org.mockito.Mockito.*;
 class TrainerServiceImplTest {
 
     @Mock private TrainerDao trainerDao;
+    @Mock private TraineeDao traineeDao;
     @Mock private UsernameGenerator usernameGenerator;
     @Mock private PasswordGenerator passwordGenerator;
 
@@ -28,17 +37,23 @@ class TrainerServiceImplTest {
     private Trainer sampleTrainer;
     private final String MOCK_USER = "dwight.schrute";
     private final String MOCK_PASS = "beetroot123";
+    private final Long TEST_ID = 102L;
 
     @BeforeEach
     void setUp() {
-        // Resolve Mockito setter injection issue
+        // Resolve Mockito setter injection issues
         trainerService.setUsernameGenerator(usernameGenerator);
         trainerService.setPasswordGenerator(passwordGenerator);
+        trainerService.setTraineeDao(traineeDao);
 
         sampleTrainer = new Trainer();
+        sampleTrainer.setUserId(TEST_ID);
         sampleTrainer.setFirstName("Dwight");
         sampleTrainer.setLastName("Schrute");
+        sampleTrainer.setUsername(MOCK_USER);
+        sampleTrainer.setPassword(MOCK_PASS);
         sampleTrainer.setSpecialization("Martial Arts");
+        sampleTrainer.setActive(true);
     }
 
     @Test
@@ -61,10 +76,23 @@ class TrainerServiceImplTest {
     }
 
     @Test
+    @DisplayName("AUTHENTICATE: Should return true when credentials match")
+    void authenticate_Success() {
+        // ARRANGE
+        when(trainerDao.findByUsername(MOCK_USER)).thenReturn(Optional.of(sampleTrainer));
+
+        // ACT
+        boolean result = trainerService.authenticate(MOCK_USER, MOCK_PASS);
+
+        // ASSERT
+        assertTrue(result);
+        verify(trainerDao, times(1)).findByUsername(MOCK_USER);
+    }
+
+    @Test
     @DisplayName("UPDATE: Should call DAO save for existing trainer")
     void updateProfile_Success() {
         // ARRANGE
-        sampleTrainer.setUserId(102L);
         when(trainerDao.save(sampleTrainer)).thenReturn(sampleTrainer);
 
         // ACT
@@ -76,17 +104,92 @@ class TrainerServiceImplTest {
     }
 
     @Test
-    @DisplayName("SELECT: Should return Trainer when ID exists")
-    void selectProfile_Found() {
+    @DisplayName("SELECT (ID): Should return Trainer when ID exists")
+    void selectProfile_FoundById() {
         // ARRANGE
-        Long testId = 102L;
-        when(trainerDao.findById(testId)).thenReturn(Optional.of(sampleTrainer));
+        when(trainerDao.findById(TEST_ID)).thenReturn(Optional.of(sampleTrainer));
 
         // ACT
-        Optional<Trainer> result = trainerService.selectProfile(testId);
+        Optional<Trainer> result = trainerService.selectProfile(TEST_ID);
 
         // ASSERT
         assertTrue(result.isPresent());
         assertEquals("Dwight", result.get().getFirstName());
+    }
+
+    @Test
+    @DisplayName("SELECT (USERNAME): Should return Trainer when username exists")
+    void selectProfile_FoundByUsername() {
+        // ARRANGE
+        when(trainerDao.findByUsername(MOCK_USER)).thenReturn(Optional.of(sampleTrainer));
+
+        // ACT
+        Optional<Trainer> result = trainerService.selectProfile(MOCK_USER);
+
+        // ASSERT
+        assertTrue(result.isPresent());
+        assertEquals(MOCK_USER, result.get().getUsername());
+    }
+
+    @Test
+    @DisplayName("UPDATE PASSWORD: Should update trainer's password and save")
+    void updatePassword_Success() {
+        // ARRANGE
+        String newPass = "moseIsTheBest";
+        when(trainerDao.findById(TEST_ID)).thenReturn(Optional.of(sampleTrainer));
+
+        // ACT
+        trainerService.updatePassword(TEST_ID, newPass);
+
+        // ASSERT
+        assertEquals(newPass, sampleTrainer.getPassword());
+        verify(trainerDao, times(1)).save(sampleTrainer);
+    }
+
+    @Test
+    @DisplayName("TOGGLE ACTIVATION: Should flip activation status")
+    void toggleActivation_Success() {
+        // ARRANGE
+        sampleTrainer.setActive(true);
+        when(trainerDao.findById(TEST_ID)).thenReturn(Optional.of(sampleTrainer));
+
+        // ACT
+        trainerService.toggleActivation(TEST_ID);
+
+        // ASSERT
+        assertFalse(sampleTrainer.isActive());
+        verify(trainerDao, times(1)).save(sampleTrainer);
+    }
+
+    @Test
+    @DisplayName("GET UNASSIGNED: Should filter out trainers already assigned to the trainee")
+    void getUnassignedTrainers_Success() {
+        // ARRANGE
+        String traineeUsername = "jim.halpert";
+
+        // Setup existing trainer (Dwight) already assigned to Jim
+        Trainee jim = new Trainee();
+        jim.setUsername(traineeUsername);
+        Set<Trainer> assignedTrainers = new HashSet<>();
+        assignedTrainers.add(sampleTrainer); // Dwight is already assigned
+        jim.setTrainers(assignedTrainers);
+
+        // Setup a new trainer (Michael) who is unassigned
+        Trainer unassignedTrainer = new Trainer();
+        unassignedTrainer.setFirstName("Michael");
+        unassignedTrainer.setUsername("michael.scott");
+
+        List<Trainer> allTrainers = List.of(sampleTrainer, unassignedTrainer);
+
+        when(traineeDao.findByUsername(traineeUsername)).thenReturn(Optional.of(jim));
+        when(trainerDao.findAll()).thenReturn(allTrainers);
+
+        // ACT
+        List<Trainer> result = trainerService.getUnassignedTrainersByTraineeUsername(traineeUsername);
+
+        // ASSERT
+        assertEquals(1, result.size(), "Result should only contain the unassigned trainer");
+        assertEquals("Michael", result.get(0).getFirstName());
+        assertFalse(result.contains(sampleTrainer), "Assigned trainer should be filtered out");
     }
 }
