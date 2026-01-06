@@ -64,4 +64,31 @@ public class DataLoaderTest {
         verify(traineeRepository, never()).saveAll(anyList());
         verify(trainingRepository, never()).saveAll(anyList());
     }
+
+    @Test
+    @DisplayName("3. NULL BRANCHES: Should not call repositories when JSON contains empty object {}")
+    void loadInitialData_shouldSkipNullCollections() throws Exception {
+        // ARRANGE
+        // Create an InputStream that represents an empty JSON object "{}"
+        java.io.InputStream emptyJsonStream = new java.io.ByteArrayInputStream("{}".getBytes());
+
+        // To mock the internal 'new ClassPathResource', we would typically need Mockito-Inline for constructor mocking.
+        // A simpler way without extra dependencies is to point to a path that returns our mocked stream, or use Mockito.mockConstruction.
+
+        try (var mockedResource = mockConstruction(org.springframework.core.io.ClassPathResource.class,
+                (mock, context) -> {
+                    when(mock.getInputStream()).thenReturn(emptyJsonStream);
+                })) {
+
+            // ACT
+            dataLoader.loadInitialData("any-path.json");
+
+            // ASSERT
+            // Verify no saveAll calls were made because DataWrapper fields will be null
+            verify(trainingTypeRepository, never()).saveAll(anyList());
+            verify(trainerRepository, never()).saveAll(anyList());
+            verify(traineeRepository, never()).saveAll(anyList());
+            verify(trainingRepository, never()).saveAll(anyList());
+        }
+    }
 }

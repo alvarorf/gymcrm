@@ -16,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -96,6 +95,40 @@ class TraineeServiceImplTest {
         // ASSERT
         verify(traineeDao, times(1)).save(sampleTrainee);
         assertEquals(TEST_ID, result.getUserId());
+    }
+
+    @Test
+    @DisplayName("2.1 UPDATE FAILURE: Should throw IllegalArgumentException when names are null.")
+    void updateProfile_ValidationFailure() {
+        // ARRANGE
+        Trainee invalidTrainee = new Trainee();
+        invalidTrainee.setFirstName(null);
+        invalidTrainee.setLastName("Doe");
+
+        // ACT & ASSERT
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            traineeService.updateProfile(invalidTrainee);
+        });
+
+        assertEquals("First Name and Last Name are required.", exception.getMessage());
+        verify(traineeDao, never()).save(any(Trainee.class));
+    }
+
+    @Test
+    @DisplayName("2.2 UPDATE FAILURE: Should throw IllegalArgumentException when last name is null.")
+    void updateProfile_LastNameNull_ThrowsException() {
+        // ARRANGE
+        Trainee invalidTrainee = new Trainee();
+        invalidTrainee.setFirstName("Jane");
+        invalidTrainee.setLastName(null); // Specifically triggers the second branch of the OR condition
+
+        // ACT & ASSERT
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            traineeService.updateProfile(invalidTrainee);
+        });
+
+        assertEquals("First Name and Last Name are required.", exception.getMessage());
+        verify(traineeDao, never()).save(any(Trainee.class));
     }
 
     @Test

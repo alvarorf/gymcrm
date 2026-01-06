@@ -109,6 +109,42 @@ class TrainerServiceImplTest {
     }
 
     @Test
+    @DisplayName("UPDATE FAILURE: Should throw IllegalArgumentException when first name or last name is missing")
+    void updateProfile_MissingNames_ThrowsException() {
+        // ARRANGE
+        Trainer invalidTrainer = new Trainer();
+        invalidTrainer.setFirstName(null); // Triggers the validation logic
+        invalidTrainer.setLastName("Schrute");
+
+        // ACT & ASSERT
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            trainerService.updateProfile(invalidTrainer);
+        });
+
+        assertEquals("First Name and Last Name are required.", exception.getMessage());
+        verify(trainerDao, never()).save(any(Trainer.class));
+    }
+
+    @Test
+    @DisplayName("UPDATE FAILURE: Should throw IllegalArgumentException when last name is null")
+    void updateProfile_LastNameNull_ThrowsException() {
+        // ARRANGE
+        Trainer invalidTrainer = new Trainer();
+        invalidTrainer.setFirstName("Dwight");
+        invalidTrainer.setLastName(null); // Triggers the second part of the || condition
+
+        // ACT & ASSERT
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            trainerService.updateProfile(invalidTrainer);
+        });
+
+        assertEquals("First Name and Last Name are required.", exception.getMessage());
+        verify(trainerDao, never()).save(any(Trainer.class));
+    }
+
+
+
+    @Test
     @DisplayName("SELECT (ID): Should return Trainer when ID exists")
     void selectProfile_FoundById() {
         // ARRANGE
@@ -196,5 +232,28 @@ class TrainerServiceImplTest {
         assertEquals(1, result.size(), "Result should only contain the unassigned trainer");
         assertEquals("Michael", result.get(0).getFirstName());
         assertFalse(result.contains(sampleTrainer), "Assigned trainer should be filtered out");
+    }
+
+    @Test
+    @DisplayName("GET UNASSIGNED: Should return all trainers if trainee's trainer set is null")
+    void getUnassignedTrainers_NullTrainerSet_ReturnsAll() {
+        // ARRANGE
+        String traineeUsername = "pam.beesly";
+        Trainee pam = new Trainee();
+        pam.setUsername(traineeUsername);
+        pam.setTrainers(null); // Triggers the 'trainee.getTrainers() == null' branch
+
+        List<Trainer> allTrainers = List.of(sampleTrainer);
+
+        when(traineeDao.findByUsername(traineeUsername)).thenReturn(Optional.of(pam));
+        when(trainerDao.findAll()).thenReturn(allTrainers);
+
+        // ACT
+        List<Trainer> result = trainerService.getUnassignedTrainersByTraineeUsername(traineeUsername);
+
+        // ASSERT
+        assertEquals(1, result.size());
+        assertTrue(result.contains(sampleTrainer));
+        verify(trainerDao, times(1)).findAll();
     }
 }
