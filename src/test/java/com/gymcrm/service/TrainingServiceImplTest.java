@@ -30,7 +30,7 @@ class TrainingServiceImplTest {
     @Mock private TraineeDao traineeDao;
     @Mock private TrainerDao trainerDao;
 
-    @InjectMocks private TrainingServiceImpl trainingService;
+    private TrainingServiceImpl trainingService;
 
     private Training sampleTraining;
     private Trainee sampleTrainee;
@@ -39,29 +39,34 @@ class TrainingServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        trainingService.setTraineeDao(traineeDao);
-        trainingService.setTrainerDao(trainerDao);
+        // Manual instantiation is significantly faster than @InjectMocks
+        // because it avoids dynamic bytecode manipulation for setters.
+        trainingService = new TrainingServiceImpl(trainingDao, traineeDao, trainerDao);
 
-        sampleTrainee = new Trainee();
-        sampleTrainee.setUserId(1L);
-        sampleTrainee.setUsername("john.doe");
-        sampleTrainee.setFirstName("John");
+        // ARRANGE: Using SuperBuilder is faster and cleaner than chain-setters
+        sampleTrainee = Trainee.builder()
+                .userId(1L)
+                .username("john.doe")
+                .firstName("John")
+                .build();
 
-        sampleTrainer = new Trainer();
-        sampleTrainer.setUserId(10L);
-        sampleTrainer.setUsername("coach.bob");
-        sampleTrainer.setFirstName("Bob");
+        sampleTrainer = Trainer.builder()
+                .userId(10L)
+                .username("coach.bob")
+                .firstName("Bob")
+                .build();
 
         TrainingType type = new TrainingType();
         type.setTrainingTypeName("Cardio");
 
-        sampleTraining = new Training();
-        sampleTraining.setId(TRAINING_ID);
-        sampleTraining.setTrainingName("Morning Run");
-        sampleTraining.setTrainingDate(LocalDate.of(2025, 1, 1));
-        sampleTraining.setTrainee(sampleTrainee);
-        sampleTraining.setTrainer(sampleTrainer);
-        sampleTraining.setTrainingType(type);
+        sampleTraining = Training.builder()
+                .id(TRAINING_ID)
+                .trainingName("Morning Run")
+                .trainingDate(LocalDate.of(2025, 1, 1))
+                .trainee(sampleTrainee)
+                .trainer(sampleTrainer)
+                .trainingType(TrainingType.builder().trainingTypeName("Cardio").build())
+                .build();
     }
 
     // --- CREATE PROFILE COVERAGE ---
@@ -268,7 +273,9 @@ class TrainingServiceImplTest {
     @DisplayName("FILTER (TRAINER): Should return empty if date is after the 'to' range")
     void getTrainerTrainings_DateAfterRange() {
         // ARRANGE
-        LocalDate toDate = LocalDate.of(2024, 12, 31); // Sample is 2025-01-01
+        LocalDate toDate = LocalDate.of(2024, 12, 31);
+
+        // Use List.of() (immutable) which is faster than ArrayList for single items
         when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
         when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
 
@@ -276,7 +283,9 @@ class TrainingServiceImplTest {
         List<Training> result = trainingService.getTrainerTrainings("coach.bob", null, toDate, null);
 
         // ASSERT
-        assertTrue(result.isEmpty(), "Should be filtered out because 2025-01-01 is after 2024-12-31");
+        assertTrue(result.isEmpty());
+        // Verify short-circuit: date filter happens BEFORE trainee filter
+        verify(traineeDao, never()).findById(anyLong());
     }
 
     @Test

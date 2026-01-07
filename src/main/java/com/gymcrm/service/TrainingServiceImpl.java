@@ -32,6 +32,15 @@ public class TrainingServiceImpl implements TrainingService {
         logger.info("TrainingServiceImpl initialized.");
     }
 
+    // Full constructor injection (for testing)
+    @Autowired
+    public TrainingServiceImpl(TrainingDao trainingDao, TraineeDao traineeDao, TrainerDao trainerDao) {
+        this.trainingDao = trainingDao;
+        this.traineeDao = traineeDao;
+        this.trainerDao = trainerDao;
+        logger.info("TrainingServiceImpl initialized.");
+    }
+
     @Autowired
     public void setTraineeDao(TraineeDao traineeDao) { this.traineeDao = traineeDao; }
 

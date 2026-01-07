@@ -1,12 +1,18 @@
 package com.gymcrm.model;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+
 import java.time.LocalDate;
 
 @Data
 @Entity
 @Table(name = "trainings")
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
+@SuperBuilder
 public class Training {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Uses auto-increment at the database level

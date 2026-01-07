@@ -17,8 +17,14 @@ import java.util.Collections;
 public class GymFacade {
     private final ApplicationContext context;
 
+    // Production constructor
     public GymFacade() {
         this.context = new AnnotationConfigApplicationContext(AppConfig.class);
+    }
+
+    // Constructor which could receive a mock ApplicationContext during testing
+    public GymFacade(ApplicationContext context) {
+        this.context = context;
     }
 
     /**
@@ -27,17 +33,16 @@ public class GymFacade {
      */
     public boolean login(String username, String password) {
         // Use services to check credentials
-        boolean isTrainee = getTraineeService().authenticate(username, password);
-        boolean isTrainer = getTrainerService().authenticate(username, password);
+        // If authenticate(trainee) is true, authenticate(trainer) is NOT called.
+        if (getTraineeService().authenticate(username, password) ||
+                getTrainerService().authenticate(username, password)) {
+                // Create a Spring Security authentication token
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                        username, password, Collections.emptyList());
 
-        if (isTrainee || isTrainer) {
-            // Create a Spring Security authentication token
-            Authentication auth = new UsernamePasswordAuthenticationToken(
-                    username, password, Collections.emptyList());
-
-            // Populate the context - this allows @PreAuthorize calls to pass
-            SecurityContextHolder.getContext().setAuthentication(auth);
-            return true;
+                // Populate the context - this allows @PreAuthorize calls to pass
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                return true;
         }
         return false;
     }

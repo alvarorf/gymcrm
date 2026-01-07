@@ -27,14 +27,14 @@ class GymFacadeTest {
     @Mock private TrainerService trainerService;
     @Mock private TrainingService trainingService;
 
-    @InjectMocks
     private GymFacade gymFacade;
 
     @BeforeEach
     void setUp() {
-        // ARRANGE: Replace the real ApplicationContext with our mock
-        // This stops the Facade from trying to spin up a real Spring container
-        ReflectionTestUtils.setField(gymFacade, "context", applicationContext);
+        // ARRANGE: We use an overloaded constructor in GymFacade to inject our mock context
+        // call inside the default constructor.
+        // It skips AnnotationConfigApplicationContext startup.
+        gymFacade = new GymFacade(applicationContext);
 
         // Setup default behavior for the context mock to return our service mocks
         lenient().when(applicationContext.getBean(TraineeService.class)).thenReturn(traineeService);
@@ -54,6 +54,7 @@ class GymFacadeTest {
         String user = "john.doe";
         String pass = "secret";
         when(traineeService.authenticate(user, pass)).thenReturn(true);
+        // trainerService does NOT need to be mocked for success because it won't be called
 
         // ACT
         boolean result = gymFacade.login(user, pass);
@@ -62,7 +63,10 @@ class GymFacadeTest {
         assertTrue(result, "Login should return true for valid Trainee");
         assertNotNull(SecurityContextHolder.getContext().getAuthentication());
         assertEquals(user, SecurityContextHolder.getContext().getAuthentication().getPrincipal());
+
+        // VERIFY: Now with short-circuiting, trainerService is NEVER called
         verify(traineeService).authenticate(user, pass);
+        verify(trainerService, never()).authenticate(anyString(), anyString());
     }
 
     @Test
