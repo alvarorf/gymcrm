@@ -6,6 +6,8 @@ import com.gymcrm.model.Trainee;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
+import com.gymcrm.util.Nomenclature;
+import com.gymcrm.util.Nomenclature.Action;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,6 +25,7 @@ public class TraineeDaoImpl implements TraineeDao {
     @Autowired
     public TraineeDaoImpl(TraineeRepository traineeRepository) {
         this.traineeRepository = traineeRepository;
+        Nomenclature.info(logger, Action.INITIALIZE);
     }
 
     @Override
@@ -32,40 +35,40 @@ public class TraineeDaoImpl implements TraineeDao {
     public Trainee save(Trainee trainee) {
         // ID generation is handled by the database (Identity) upon save
         Trainee savedTrainee = traineeRepository.save(trainee);
-        logger.info("Trainee saved successfully with ID: {}", savedTrainee.getUserId());
+        Nomenclature.success(logger, Action.CREATE, savedTrainee.getUserId());
         return savedTrainee;
     }
 
     @Override
     @Transactional
     public void delete(Long id) {
-        logger.info("Deleting Trainee with ID: {}", id);
+        Nomenclature.info(logger, Action.DELETE);
         traineeRepository.deleteById(id);
     }
 
     @Override
     @Transactional
     public void delete(String username) {
-        logger.info("Attempting to delete Trainee with username: {}", username);
+        Nomenclature.info(logger, Action.DELETE, username);
         // Uses the custom method in TraineeRepository
         traineeRepository.deleteByUsername(username);
     }
 
     @Override
     public Optional<Trainee> findByUsername(String username) {
-        logger.debug("Finding Trainee by username: {}", username);
+        Nomenclature.info(logger, Action.FETCH, username);
         return traineeRepository.findByUsername(username);
     }
 
     @Override
     public Optional<Trainee> findById(Long id) {
-        logger.debug("Finding Trainee by ID: {}", id);
+        Nomenclature.info(logger, Action.FETCH, id);
         return traineeRepository.findById(id);
     }
 
     @Override
     public List<Trainee> findAll() {
-        logger.debug("Retrieving all Trainees");
+        Nomenclature.info(logger, Action.FETCH);
         return traineeRepository.findAll();
     }
 }

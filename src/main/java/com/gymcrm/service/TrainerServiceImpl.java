@@ -10,6 +10,8 @@ import com.gymcrm.util.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import com.gymcrm.util.Nomenclature;
+import com.gymcrm.util.Nomenclature.Action;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,7 +40,7 @@ public class TrainerServiceImpl implements TrainerService {
     public TrainerServiceImpl(TrainerDao trainerDao)
     {
         this.trainerDao = trainerDao;
-        logger.info("TrainerServiceImpl initialized with constructor injection for DAO.");
+        Nomenclature.info(logger, Action.INITIALIZE);
     }
 
     @Autowired
@@ -57,7 +59,7 @@ public class TrainerServiceImpl implements TrainerService {
     @Override
     public Trainer createProfile(Trainer trainer)
     {
-        logger.info("Attempting to create new Trainer profile: {} {}", trainer.getFirstName(), trainer.getLastName());
+        Nomenclature.info(logger, Action.CREATE, trainer.getFirstName() + " " + trainer.getLastName());
         String username = usernameGenerator.generateUsername(trainer.getFirstName(), trainer.getLastName());
         String password = passwordGenerator.generatePassword();
 
@@ -65,13 +67,13 @@ public class TrainerServiceImpl implements TrainerService {
         trainer.setPassword(password);
 
         Trainer savedTrainer = trainerDao.save(trainer);
-        logger.info("Trainer created successfully. Username: {}", savedTrainer.getUsername());
+        Nomenclature.success(logger, Action.CREATE, savedTrainer.getUsername());
         return savedTrainer;
     }
 
     @Override
     public boolean authenticate(String username, String password) {
-        logger.debug("Authenticating trainer: {}", username);
+        Nomenclature.info(logger, Action.AUTH);
         return trainerDao.findByUsername(username)
                 .map(trainer -> trainer.getPassword().equals(password))
                 .orElse(false);
@@ -82,7 +84,7 @@ public class TrainerServiceImpl implements TrainerService {
     @PreAuthorize("isAuthenticated()")
     public List<Trainer> getUnassignedTrainersByTraineeUsername(String traineeUsername) {
         Trainee trainee = traineeDao.findByUsername(traineeUsername)
-                .orElseThrow(() -> new RuntimeException("Trainee not found"));
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(Trainee.class)));
 
         List<Trainer> allTrainers = trainerDao.findAll();
 
@@ -96,10 +98,10 @@ public class TrainerServiceImpl implements TrainerService {
     @PreAuthorize("isAuthenticated()")
     public Trainer updateProfile(Trainer trainer)
     {
-        logger.info("Attempting to update Trainer profile with ID: {}", trainer.getUserId());
+        Nomenclature.info(logger, Action.UPDATE, trainer.getUserId());
         // Notes (3): Required field validation
         if (trainer.getFirstName() == null || trainer.getLastName() == null) {
-            throw new IllegalArgumentException("First Name and Last Name are required.");
+            throw new IllegalArgumentException(Nomenclature.MSG_REQUIRED);
         }
         return trainerDao.save(trainer);
     }
@@ -108,7 +110,7 @@ public class TrainerServiceImpl implements TrainerService {
     @PreAuthorize("isAuthenticated()")
     public Optional<Trainer> selectProfile(Long id)
     {
-        logger.info("Attempting to select Trainer profile with ID: {}", id);
+        Nomenclature.info(logger, Action.FETCH, id);
         return trainerDao.findById(id);
     }
 
@@ -116,7 +118,7 @@ public class TrainerServiceImpl implements TrainerService {
     @PreAuthorize("isAuthenticated()")
     public Optional<Trainer> selectProfile(String username) {
 
-        logger.info("Selecting Trainer profile by username: {}", username);
+        Nomenclature.info(logger, Action.FETCH, username);
         return trainerDao.findByUsername(username);
     }
 
@@ -126,7 +128,7 @@ public class TrainerServiceImpl implements TrainerService {
         trainerDao.findById(id).ifPresent(trainer -> {
             trainer.setPassword(newPassword);
             trainerDao.save(trainer);
-            logger.info("Password updated for Trainer ID: {}", id);
+            Nomenclature.success(logger, Action.UPDATE_SENSITIVE, "ID: " + id);
         });
     }
 
@@ -134,10 +136,10 @@ public class TrainerServiceImpl implements TrainerService {
     @PreAuthorize("isAuthenticated()")
     public void toggleActivation(Long id) {
         trainerDao.findById(id).ifPresent(trainer -> {
-            // Req 6: Non-idempotent (Toggles the current state)
             trainer.setActive(!trainer.isActive());
             trainerDao.save(trainer);
-            logger.info("Trainer activation status changed to: {}", trainer.isActive());
+            // Prints: [toggleActivation] Attempting to change status to ACTIVE Trainer
+            Nomenclature.info(logger, Action.TOGGLE, trainer.isActive());
         });
     }
 }

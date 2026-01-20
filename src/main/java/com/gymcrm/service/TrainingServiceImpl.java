@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import com.gymcrm.util.Nomenclature;
+import com.gymcrm.util.Nomenclature.Action;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -29,7 +31,7 @@ public class TrainingServiceImpl implements TrainingService {
 
     public TrainingServiceImpl(TrainingDao trainingDao) {
         this.trainingDao = trainingDao;
-        logger.info("TrainingServiceImpl initialized.");
+        Nomenclature.info(logger, Action.INITIALIZE);
     }
 
     // Full constructor injection (for testing)
@@ -38,7 +40,7 @@ public class TrainingServiceImpl implements TrainingService {
         this.trainingDao = trainingDao;
         this.traineeDao = traineeDao;
         this.trainerDao = trainerDao;
-        logger.info("TrainingServiceImpl initialized.");
+        Nomenclature.info(logger, Action.INITIALIZE);
     }
 
     @Autowired
@@ -51,21 +53,20 @@ public class TrainingServiceImpl implements TrainingService {
     @Override
     @PreAuthorize("isAuthenticated()")
     public Training createProfile(Training training) {
-        logger.info("Creating training: {}", training.getTrainingName());
+        Nomenclature.info(logger, Action.CREATE, training.getTrainingName());
         return trainingDao.save(training);
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
     public Optional<Training> selectProfile(Long id) {
-        logger.info("Attempting to select Training profile with ID: {}", id);
+        Nomenclature.info(logger, Action.FETCH, id);
         Optional<Training> training = trainingDao.findById(id);
 
-        if (training.isPresent()) {
-            logger.debug("Training found: {}", training.get().getTrainingName());
-        } else {
-            logger.warn("Training not found for ID: {}", id);
-        }
+        training.ifPresentOrElse(
+                t -> Nomenclature.success(logger, Action.FETCH, t.getTrainingName()),
+                () -> Nomenclature.warn(logger, Action.FETCH, id)
+        );
 
         return training;
     }
@@ -73,14 +74,14 @@ public class TrainingServiceImpl implements TrainingService {
     @Override
     @PreAuthorize("isAuthenticated()")
     public Optional<Training> selectProfile(String trainingName){
-        logger.info("Attempting to select Training profile with name: {}", trainingName);
+        Nomenclature.info(logger, Action.FETCH, trainingName);
         Optional<Training> training = trainingDao.findByName(trainingName);
 
-        if (training.isPresent()) {
-            logger.debug("Training found: {}", training.get().getTrainingName());
-        } else {
-            logger.warn("Training not found for name: {}", trainingName);
-        }
+        training.ifPresentOrElse(
+                t -> Nomenclature.success(logger, Action.FETCH, t.getTrainingName()),
+                () -> Nomenclature.warn(logger, Action.FETCH, trainingName)
+        );
+
         return training;
     }
 

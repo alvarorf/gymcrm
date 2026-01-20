@@ -3,6 +3,7 @@ package com.gymcrm.dao;
 import com.gymcrm.dao.interfaces.TrainingDao;
 import com.gymcrm.model.Training;
 import com.gymcrm.repositories.TrainingRepository;
+import com.gymcrm.util.Nomenclature;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
@@ -29,24 +30,24 @@ public class TrainingDaoImpl implements TrainingDao {
     @Transactional
     public Training save(Training training) {
         Training savedTraining = trainingRepository.save(training);
-        logger.info("Training saved successfully with ID: {}", savedTraining.getId());
+        Nomenclature.success(logger, Nomenclature.Action.CREATE, savedTraining.getId());
         return savedTraining;
     }
     @Override
     public Optional<Training> findById(Long id) {
-        logger.debug("Finding Training by ID: {}", id);
+        Nomenclature.info(logger, Nomenclature.Action.FETCH, id);
         return trainingRepository.findById(id);
     }
 
     @Override
     public Optional<Training> findByName(String trainingName) {
-        logger.debug("Finding Training by name: {}", trainingName);
+        Nomenclature.info(logger, Nomenclature.Action.FETCH, trainingName);
         return trainingRepository.findByTrainingName(trainingName);
     }
 
     @Override
     public List<Training> findAll() {
-        logger.debug("Retrieving all Trainings");
+        Nomenclature.info(logger, Nomenclature.Action.FETCH);
         return trainingRepository.findAll();
     }
 }

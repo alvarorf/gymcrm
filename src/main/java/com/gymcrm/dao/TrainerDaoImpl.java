@@ -14,6 +14,9 @@ import org.slf4j.Logger; // Simple Logging Facade for Java
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gymcrm.util.Nomenclature;
+import com.gymcrm.util.Nomenclature.Action;
+
 @Repository
 public class TrainerDaoImpl implements TrainerDao {
     private static final Logger logger = LoggerFactory.getLogger(TrainerDaoImpl.class);
@@ -29,24 +32,24 @@ public class TrainerDaoImpl implements TrainerDao {
     public Trainer save(Trainer trainer) {
         // ID generation is handled by the database (Identity) upon save
         Trainer savedTrainer = trainerRepository.save(trainer);
-        logger.info("Trainer saved successfully with ID: {}", savedTrainer.getUserId());
+        Nomenclature.success(logger, Action.CREATE, savedTrainer.getUserId());
         return savedTrainer;
     }
     @Override
     public Optional<Trainer> findById(Long id) {
-        logger.debug("Finding Trainer by ID: {}", id);
+        Nomenclature.info(logger, Action.FETCH, id);
         return trainerRepository.findById(id);
     }
 
     @Override
     public List<Trainer> findAll() {
-        logger.debug("Retrieving all Trainers");
+        Nomenclature.info(logger, Action.FETCH);
         return trainerRepository.findAll();
     }
 
     @Override
     public Optional<Trainer> findByUsername(String username) {
-        logger.debug("Finding Trainer by username: {}", username);
+        Nomenclature.info(logger, Action.FETCH, username);
         return trainerRepository.findByUsername(username);
     }
 }

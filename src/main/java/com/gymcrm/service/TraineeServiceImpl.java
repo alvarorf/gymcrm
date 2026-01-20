@@ -10,6 +10,8 @@ import com.gymcrm.util.PasswordGenerator;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import com.gymcrm.util.Nomenclature;
+import com.gymcrm.util.Nomenclature.Action;
 
 import java.util.List;
 import java.util.Objects;
@@ -49,7 +51,8 @@ public class TraineeServiceImpl implements TraineeService {
     public TraineeServiceImpl(TraineeDao traineeDao)
     {
         this.traineeDao = traineeDao;
-        logger.info("TraineeServiceImpl initialized with constructor injection for DAO.");
+        // Output: [CONSTRUCTOR] Context initialized for Trainee
+        Nomenclature.info(logger, Action.INITIALIZE);
     }
 
     // Setter-based injection for the non-core dependencies
@@ -63,7 +66,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     public Trainee createProfile(Trainee trainee) {
-        logger.info("Attempting to create new Trainee profile: {} {}", trainee.getFirstName(), trainee.getLastName());
+        Nomenclature.info(logger, Action.CREATE);
         String username = usernameGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName());
         String password = passwordGenerator.generatePassword();
 
@@ -71,13 +74,13 @@ public class TraineeServiceImpl implements TraineeService {
         trainee.setPassword(password);
 
         Trainee savedTrainee = traineeDao.save(trainee);
-        logger.info("Trainee created successfully. Username: {}", savedTrainee.getUsername());
+        Nomenclature.success(logger, Action.CREATE, savedTrainee.getUsername());
         return savedTrainee;
     }
 
     @Override
     public boolean authenticate(String username, String password) {
-        logger.debug("Authenticating trainee: {}", username);
+        Nomenclature.info(logger, Action.AUTH);
         return traineeDao.findByUsername(username)
                 .map(trainee -> trainee.getPassword().equals(password))
                 .orElse(false);
@@ -86,10 +89,10 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     @PreAuthorize("isAuthenticated()")
     public Trainee updateProfile(Trainee trainee) {
-        logger.info("Attempting to update Trainee profile with ID: {}", trainee.getUserId());
-        // Notes (3): Required field validation
+        // Output: [updateProfile] Attempting to update Trainee
+        Nomenclature.info(logger, Action.UPDATE);
         if (trainee.getFirstName() == null || trainee.getLastName() == null) {
-            throw new IllegalArgumentException("First Name and Last Name are required.");
+            throw new IllegalArgumentException(Nomenclature.MSG_REQUIRED);
         }
         return traineeDao.save(trainee);
     }
@@ -97,30 +100,28 @@ public class TraineeServiceImpl implements TraineeService {
     @Override
     @PreAuthorize("isAuthenticated()")
     public Optional<Trainee> selectProfile(String targetUser) {
-
-        logger.info("Selecting Trainee profile by username: {}", targetUser);
+        Nomenclature.info(logger, Action.FETCH, targetUser); // Auto: [selectProfile] Attempting to retrieve context for jane.doe Trainee
         return traineeDao.findByUsername(targetUser);
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
     public Optional<Trainee> selectProfile(Long id) {
-        logger.info("Selecting Trainee profile by ID: {}", id);
+        Nomenclature.info(logger, Action.FETCH, id);
         return traineeDao.findById(id);
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
     public void deleteProfile(Long id) {
-        logger.warn("Attempting to delete Trainee profile with ID: {}", id);
+        Nomenclature.info(logger, Action.DELETE, id);
         traineeDao.delete(id);
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
     public void deleteProfile(String targetUser) {
-
-        logger.warn("Attempting to delete Trainee profile with username: {}", targetUser);
+        Nomenclature.info(logger, Action.DELETE, targetUser);
         // 13: Delete by username
         traineeDao.findByUsername(targetUser).ifPresent(t -> traineeDao.delete(t.getUserId()));
     }
@@ -131,7 +132,7 @@ public class TraineeServiceImpl implements TraineeService {
         traineeDao.findById(id).ifPresent(trainee -> {
             trainee.setPassword(newPassword);
             traineeDao.save(trainee);
-            logger.info("Password updated for Trainee ID: {}", id);
+            Nomenclature.success(logger, Action.UPDATE_SENSITIVE, "ID: " + id);
         });
     }
 
@@ -141,7 +142,7 @@ public class TraineeServiceImpl implements TraineeService {
         traineeDao.findById(id).ifPresent(trainee -> {
             trainee.setActive(!trainee.isActive());
             traineeDao.save(trainee);
-            logger.info("Trainee activation status changed to: {}", trainee.isActive());
+            Nomenclature.info(logger, Action.TOGGLE);
         });
     }
 
@@ -150,7 +151,7 @@ public class TraineeServiceImpl implements TraineeService {
     @PreAuthorize("isAuthenticated()")
     public void updateTraineeTrainers(String traineeUsername, List<String> trainerUsernames) {
         Trainee trainee = traineeDao.findByUsername(traineeUsername)
-                .orElseThrow(() -> new RuntimeException("Trainee not found"));
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(Trainee.class)));
 
         Set<Trainer> newTrainers = trainerUsernames.stream()
                 .map(u -> trainerDao.findByUsername(u).orElse(null))
@@ -159,6 +160,6 @@ public class TraineeServiceImpl implements TraineeService {
 
         trainee.setTrainers(newTrainers);
         traineeDao.save(trainee);
-        logger.info("Updated trainer list for trainee: {}", traineeUsername);
+        Nomenclature.success(logger, Action.UPDATE, traineeUsername);
     }
 }

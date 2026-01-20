@@ -1,6 +1,8 @@
 package com.gymcrm.config;
 
 import com.gymcrm.util.DataLoader;
+import com.gymcrm.util.Nomenclature;
+import com.gymcrm.util.Nomenclature.Action;
 import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,8 +40,11 @@ public class StorageInitializationPostProcessor implements BeanPostProcessor
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         // Intercept the EntityManagerFactory to trigger DB seeding (after the EntityManager is ready)
         if (bean instanceof EntityManagerFactory) {
-            logger.info("Bean-PostProc LOG: EntityManagerFactory initialized. Triggering global data load.");
+            // Output: [postProcessBeforeInitialization] Attempting to seed database with initial data StorageInitialization
+            Nomenclature.info(logger, Action.SEED);
             dataLoader.loadInitialData(dataPath);
+            // Output: [postProcessBeforeInitialization] Successfully seed database with initial data StorageInitialization (Global Load)
+            Nomenclature.success(logger, Action.SEED, "Global Load");
         }
 
         return bean;
