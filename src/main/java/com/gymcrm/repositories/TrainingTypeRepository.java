@@ -1,9 +1,16 @@
 package com.gymcrm.repositories;
 
 import com.gymcrm.model.TrainingType;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import lombok.NonNull;
+import org.springframework.data.repository.CrudRepository;
 
-@Repository
-public interface TrainingTypeRepository extends JpaRepository<TrainingType, Long> {
+import java.util.List;
+import java.util.Optional;
+
+public interface TrainingTypeRepository extends CrudRepository<@NonNull TrainingType, @NonNull Long> {
+
+    @Override
+    @NonNull
+    List<TrainingType> findAll();
+    Optional<TrainingType> findByTrainingTypeName(String name);
 }
