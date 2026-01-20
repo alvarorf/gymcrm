@@ -5,6 +5,7 @@ import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.TrainingType;
+import com.gymcrm.util.Nomenclature;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -117,11 +118,10 @@ class TrainerServiceImplTest {
         invalidTrainer.setLastName("Schrute");
 
         // ACT & ASSERT
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            trainerService.updateProfile(invalidTrainer);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            trainerService.updateProfile(invalidTrainer));
 
-        assertEquals("First Name and Last Name are required.", exception.getMessage());
+        assertEquals(Nomenclature.MSG_REQUIRED, exception.getMessage());
         verify(trainerDao, never()).save(any(Trainer.class));
     }
 
@@ -134,11 +134,10 @@ class TrainerServiceImplTest {
         invalidTrainer.setLastName(null); // Triggers the second part of the || condition
 
         // ACT & ASSERT
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            trainerService.updateProfile(invalidTrainer);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            trainerService.updateProfile(invalidTrainer));
 
-        assertEquals("First Name and Last Name are required.", exception.getMessage());
+        assertEquals(Nomenclature.MSG_REQUIRED, exception.getMessage());
         verify(trainerDao, never()).save(any(Trainer.class));
     }
 
@@ -215,7 +214,7 @@ class TrainerServiceImplTest {
         assignedTrainers.add(sampleTrainer); // Dwight is already assigned
         jim.setTrainers(assignedTrainers);
 
-        // Setup a new trainer (Michael) who is unassigned
+        // Set up a new trainer (Michael) who is unassigned
         Trainer unassignedTrainer = new Trainer();
         unassignedTrainer.setFirstName("Michael");
         unassignedTrainer.setUsername("michael.scott");
@@ -230,7 +229,7 @@ class TrainerServiceImplTest {
 
         // ASSERT
         assertEquals(1, result.size(), "Result should only contain the unassigned trainer");
-        assertEquals("Michael", result.get(0).getFirstName());
+        assertEquals("Michael", result.getFirst().getFirstName());
         assertFalse(result.contains(sampleTrainer), "Assigned trainer should be filtered out");
     }
 

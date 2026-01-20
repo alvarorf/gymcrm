@@ -4,6 +4,7 @@ import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
+import com.gymcrm.util.Nomenclature;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -106,11 +107,10 @@ class TraineeServiceImplTest {
         invalidTrainee.setLastName("Doe");
 
         // ACT & ASSERT
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            traineeService.updateProfile(invalidTrainee);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                traineeService.updateProfile(invalidTrainee));
 
-        assertEquals("First Name and Last Name are required.", exception.getMessage());
+        assertEquals(Nomenclature.MSG_REQUIRED, exception.getMessage());
         verify(traineeDao, never()).save(any(Trainee.class));
     }
 
@@ -123,11 +123,10 @@ class TraineeServiceImplTest {
         invalidTrainee.setLastName(null); // Specifically triggers the second branch of the OR condition
 
         // ACT & ASSERT
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            traineeService.updateProfile(invalidTrainee);
-        });
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+            traineeService.updateProfile(invalidTrainee));
 
-        assertEquals("First Name and Last Name are required.", exception.getMessage());
+        assertEquals(Nomenclature.MSG_REQUIRED, exception.getMessage());
         verify(traineeDao, never()).save(any(Trainee.class));
     }
 

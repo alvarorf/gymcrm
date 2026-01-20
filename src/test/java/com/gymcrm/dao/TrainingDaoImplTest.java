@@ -52,11 +52,11 @@ class TrainingDaoImplTest {
         when(trainingRepository.findByTrainingName(name)).thenReturn(Optional.of(training));
 
         // ACT
-        Optional<Optional<Training>> result = Optional.ofNullable(trainingDao.findByName(name));
+        Optional<Training> result = trainingDao.findByName(name);
 
         // ASSERT
-        assertTrue(result.get().isPresent());
-        assertEquals(name, result.get().get().getTrainingName());
+        assertTrue(result.isPresent(), "The result should be present");
+        assertEquals(name, result.get().getTrainingName());
         verify(trainingRepository, times(1)).findByTrainingName(name);
     }
 
