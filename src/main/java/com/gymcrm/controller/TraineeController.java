@@ -6,6 +6,7 @@ import com.gymcrm.service.interfaces.TraineeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,10 +42,11 @@ public class TraineeController {
                 .body(new RegistrationResponse(saved.getUsername(), saved.getPassword()));
     }
 
+    /*
     // 4. Change Login
     @Operation(summary = "Change Password")
     @PutMapping("/change-login")
-    public ResponseEntity<Void> changeLogin(@Valid @RequestBody ChangeLoginRequest request) {
+    public ResponseEntity<Void> changeLogin(@NotNull @Valid @RequestBody ChangeLoginRequest request) {
         // Note 3: Authenticaton required
         if (!traineeService.authenticate(request.getUsername(), request.getOldPassword())) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -56,6 +58,8 @@ public class TraineeController {
 
         return ResponseEntity.ok().build(); // 200 OK
     }
+
+     */
 
     @Operation(summary = "Get Trainee Profile")
     @GetMapping("/{username}")

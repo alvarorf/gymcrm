@@ -10,7 +10,6 @@ import java.util.Optional;
 Trainer Service class should support possibility to create/update/select Trainer profile
  */
 public interface TrainerService {
-    boolean authenticate(String username, String password);
     Trainer createProfile(Trainer trainer);
     Trainer updateProfile(Trainer trainer);
     Optional<Trainer> selectProfile(Long id);

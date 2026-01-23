@@ -71,14 +71,6 @@ public class TrainerServiceImpl implements TrainerService {
         return savedTrainer;
     }
 
-    @Override
-    public boolean authenticate(String username, String password) {
-        Nomenclature.info(logger, Action.AUTH);
-        return trainerDao.findByUsername(username)
-                .map(trainer -> trainer.getPassword().equals(password))
-                .orElse(false);
-    }
-
     // For 17. We need to find trainers who are not currently associated with a specific trainee
     @Override
     @PreAuthorize("isAuthenticated()")

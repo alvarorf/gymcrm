@@ -9,7 +9,6 @@ Trainee Service class should support possibility to create/update/delete/select 
 profile.
 */
 public interface TraineeService {
-    boolean authenticate(String username, String password);
     Trainee createProfile(Trainee trainee);
     Trainee updateProfile(Trainee trainee);
     void deleteProfile(Long id);

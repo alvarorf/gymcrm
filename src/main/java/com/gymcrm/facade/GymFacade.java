@@ -1,5 +1,6 @@
 package com.gymcrm.facade;
 
+import com.gymcrm.service.interfaces.AuthService;
 import com.gymcrm.service.interfaces.TraineeService;
 import com.gymcrm.service.interfaces.TrainerService;
 import com.gymcrm.service.interfaces.TrainingService;
@@ -19,17 +20,20 @@ import java.util.Collections;
 public class GymFacade {
 
     private final ApplicationContext context;
+    private final AuthService authService;
     private final TraineeService traineeService;
     private final TrainerService trainerService;
     private final TrainingService trainingService;
 
     // Production constructor (used by Spring)
     public GymFacade(ApplicationContext context,
+                     AuthService authService,
                      TraineeService traineeService,
                      TrainerService trainerService,
                      TrainingService trainingService) {
 
         this.context = context;
+        this.authService = authService;
         this.traineeService = traineeService;
         this.trainerService = trainerService;
         this.trainingService = trainingService;
@@ -37,23 +41,19 @@ public class GymFacade {
 
     // Login logic (manual authentication)
     public boolean login(String username, String password) {
+    // Delegate authentication to the AuthService
+            if (authService.authenticate(username, password)) {
+                Authentication auth = new UsernamePasswordAuthenticationToken(
+                        username,
+                        null, // Credential should be null/empty after successful auth for security
+                        Collections.emptyList()
+                );
 
-        if (traineeService.authenticate(username, password)
-                || trainerService.authenticate(username, password)) {
-
-            Authentication auth =
-                    new UsernamePasswordAuthenticationToken(
-                            username,
-                            password,
-                            Collections.emptyList()
-                    );
-
-            SecurityContextHolder.getContext().setAuthentication(auth);
-            return true;
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                return true;
+            }
+            return false;
         }
-
-        return false;
-    }
 
     // Getter access
 

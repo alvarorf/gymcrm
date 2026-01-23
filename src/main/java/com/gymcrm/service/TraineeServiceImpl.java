@@ -79,14 +79,6 @@ public class TraineeServiceImpl implements TraineeService {
     }
 
     @Override
-    public boolean authenticate(String username, String password) {
-        Nomenclature.info(logger, Action.AUTH);
-        return traineeDao.findByUsername(username)
-                .map(trainee -> trainee.getPassword().equals(password))
-                .orElse(false);
-    }
-
-    @Override
     @PreAuthorize("isAuthenticated()")
     public Trainee updateProfile(Trainee trainee) {
         // Output: [updateProfile] Attempting to update Trainee
