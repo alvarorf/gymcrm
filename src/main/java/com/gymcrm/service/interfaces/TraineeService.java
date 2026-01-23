@@ -15,7 +15,7 @@ public interface TraineeService {
     void deleteProfile(Long id);
     void deleteProfile(String targetUser); // 13. Delete trainee profile by username.
     Optional<Trainee> selectProfile(Long id);
-    Optional<Trainee> selectProfile(String targetUser); // 6. Select Trainee profile by username
+    Optional<Trainee> selectTraineeProfile(String targetUser); // 6. Select Trainee profile by username
     void updatePassword(Long id, String newPassword); // 7. Trainee password change
 
     // Non-idempotent (meaning that executing it multiple times does not necessarily

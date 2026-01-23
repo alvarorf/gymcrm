@@ -40,7 +40,7 @@ public class TraineeServiceImpl implements TraineeService {
     // Why final? Because TraineeDao is a core dependency, injected via the constructor
     private final TraineeDao traineeDao;
     // Non-Core Dependencies. Must NOT be final, for injection via Setter
-    private UsernameGenerator usernameGenerator;
+    private UsernameGenerator usernameGenerator;  // TODO: We can have a credentials generator for both (generalize)
     private PasswordGenerator passwordGenerator;
     private TrainerDao trainerDao;
 
@@ -65,7 +65,7 @@ public class TraineeServiceImpl implements TraineeService {
     public void setTrainerDao(TrainerDao trainerDao) { this.trainerDao = trainerDao; }
 
     @Override
-    public Trainee createProfile(Trainee trainee) {
+    public Trainee createProfile(Trainee trainee) { // TODO: Split up into at least two methods OR perhaps use the credentials generator service to generate the password, username, set them and return the model
         Nomenclature.info(logger, Action.CREATE);
         String username = usernameGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName());
         String password = passwordGenerator.generatePassword();
@@ -99,7 +99,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public Optional<Trainee> selectProfile(String targetUser) {
+    public Optional<Trainee> selectTraineeProfile(String targetUser) {
         Nomenclature.info(logger, Action.FETCH, targetUser); // Auto: [selectProfile] Attempting to retrieve context for jane.doe Trainee
         return traineeDao.findByUsername(targetUser);
     }

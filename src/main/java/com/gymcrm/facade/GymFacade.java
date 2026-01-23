@@ -1,63 +1,75 @@
 package com.gymcrm.facade;
 
-import com.gymcrm.config.AppConfig;
 import com.gymcrm.service.interfaces.TraineeService;
 import com.gymcrm.service.interfaces.TrainerService;
 import com.gymcrm.service.interfaces.TrainingService;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+
 import java.util.Collections;
 
 /**
- * Facade class to manage service access and context initialization.
+ * Facade class to manage service access and authentication.
+ * Uses Spring Boot's managed ApplicationContext.
  */
+@Component
 public class GymFacade {
+
     private final ApplicationContext context;
+    private final TraineeService traineeService;
+    private final TrainerService trainerService;
+    private final TrainingService trainingService;
 
-    // Production constructor
-    public GymFacade() {
-        this.context = new AnnotationConfigApplicationContext(AppConfig.class);
-    }
+    // Production constructor (used by Spring)
+    public GymFacade(ApplicationContext context,
+                     TraineeService traineeService,
+                     TrainerService trainerService,
+                     TrainingService trainingService) {
 
-    // Constructor which could receive a mock ApplicationContext during testing
-    public GymFacade(ApplicationContext context) {
         this.context = context;
+        this.traineeService = traineeService;
+        this.trainerService = trainerService;
+        this.trainingService = trainingService;
     }
 
-    /**
-     * Manually sets the SecurityContext for the current thread.
-     * The equivalent of "logging in".
-     */
+    // Login logic (manual authentication)
     public boolean login(String username, String password) {
-        // Use services to check credentials
-        // If authenticate(trainee) is true, authenticate(trainer) is NOT called.
-        if (getTraineeService().authenticate(username, password) ||
-                getTrainerService().authenticate(username, password)) {
-                // Create a Spring Security authentication token
-                Authentication auth = new UsernamePasswordAuthenticationToken(
-                        username, password, Collections.emptyList());
 
-                // Populate the context - this allows @PreAuthorize calls to pass
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                return true;
+        if (traineeService.authenticate(username, password)
+                || trainerService.authenticate(username, password)) {
+
+            Authentication auth =
+                    new UsernamePasswordAuthenticationToken(
+                            username,
+                            password,
+                            Collections.emptyList()
+                    );
+
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            return true;
         }
+
         return false;
     }
 
+    // Getter access
+
+    public ApplicationContext getContext() {
+        return context;
+    }
+
     public TraineeService getTraineeService() {
-        return context.getBean(TraineeService.class);
+        return traineeService;
     }
 
     public TrainerService getTrainerService() {
-        return context.getBean(TrainerService.class);
+        return trainerService;
     }
 
     public TrainingService getTrainingService() {
-        return context.getBean(TrainingService.class);
+        return trainingService;
     }
-
-
 }

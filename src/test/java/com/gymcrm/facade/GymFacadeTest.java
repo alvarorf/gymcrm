@@ -13,7 +13,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -27,8 +26,10 @@ class GymFacadeTest {
     @Mock private TrainerService trainerService;
     @Mock private TrainingService trainingService;
 
+    @InjectMocks
     private GymFacade gymFacade;
 
+    /*
     @BeforeEach
     void setUp() {
         // ARRANGE: We use an overloaded constructor in GymFacade to inject our mock context
@@ -41,6 +42,7 @@ class GymFacadeTest {
         lenient().when(applicationContext.getBean(TrainerService.class)).thenReturn(trainerService);
         lenient().when(applicationContext.getBean(TrainingService.class)).thenReturn(trainingService);
     }
+    */
 
     @AfterEach
     void clearSecurity() {

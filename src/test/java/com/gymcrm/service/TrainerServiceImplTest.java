@@ -229,7 +229,7 @@ class TrainerServiceImplTest {
 
         // ASSERT
         assertEquals(1, result.size(), "Result should only contain the unassigned trainer");
-        assertEquals("Michael", result.getFirst().getFirstName());
+        assertEquals("Michael", result.get(0).getFirstName());
         assertFalse(result.contains(sampleTrainer), "Assigned trainer should be filtered out");
     }
 

@@ -34,26 +34,33 @@ class CrmDemoRunnerTest {
     @DisplayName("1. DEMO RUNNER: Should call createProfile and selectProfile through the Facade.")
     void runDemo_shouldExecuteWorkflow() {
         // ARRANGE
-        CrmDemoRunner runner = new CrmDemoRunner();
+        when(gymFacade.getTraineeService()).thenReturn(traineeService);
+        when(gymFacade.getTrainerService()).thenReturn(trainerService);
 
         TrainingType motivationType = new TrainingType();
         motivationType.setTrainingTypeName("Motivation");
 
-        Trainee mockTrainee = Trainee.builder().username("john.doe").build();
+        Trainee mockTrainee = Trainee.builder()
+                .username("john.doe")
+                .build();
+
         Trainer mockTrainer = Trainer.builder()
                 .firstName("Michael")
                 .lastName("Scott")
-                .specialization(motivationType) // Fixed type
+                .specialization(motivationType)
                 .build();
 
-        when(gymFacade.getTraineeService()).thenReturn(traineeService);
-        when(gymFacade.getTrainerService()).thenReturn(trainerService);
+        when(traineeService.createProfile(any(Trainee.class)))
+                .thenReturn(mockTrainee);
 
-        when(traineeService.createProfile(any(Trainee.class))).thenReturn(mockTrainee);
-        when(trainerService.selectProfile(101L)).thenReturn(Optional.of(mockTrainer));
+        when(trainerService.selectProfile(101L))
+                .thenReturn(Optional.of(mockTrainer));
+
+        // Inject mock facade
+        CrmDemoRunner runner = new CrmDemoRunner(gymFacade);
 
         // ACT
-        runner.runDemo(gymFacade);
+        runner.run(null);
 
         // ASSERT
         verify(traineeService, times(1)).createProfile(any(Trainee.class));
