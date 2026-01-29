@@ -1,6 +1,5 @@
 package com.gymcrm.service.interfaces;
 
-import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 
 import java.util.List;
@@ -18,6 +17,7 @@ public interface TrainerService {
     // Non-idempotent (meaning that executing it multiple times does not necessarily
     // produce the same result) action (Notes: 6)
     void toggleActivation(Long id);
+    void toggleActivation(String username);
 
     List<Trainer> getUnassignedTrainersByTraineeUsername(String traineeUsername);
 }

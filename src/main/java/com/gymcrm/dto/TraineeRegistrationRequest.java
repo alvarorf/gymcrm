@@ -18,6 +18,7 @@ public class TraineeRegistrationRequest {
     @NotBlank(message = "Last Name is required") // Requirement 1.a.II
     private String lastName;
 
-    private LocalDate dateOfBirth; // Optional
-    private String address;        // Optional
+    // Optional
+    private LocalDate dateOfBirth;
+    private String address;
 }

@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/trainers")
-@Tag(name = "Trainer", description = "Trainer Management")
+@Tag(name = "Trainer", description = "Trainer management")
 public class TrainerController {
 
     private final TrainerService trainerService;
@@ -28,13 +28,13 @@ public class TrainerController {
     }
 
     // 2. Trainer registration
-    @Operation(summary = "Register a new Trainer")
+    @Operation(summary = "Register a new trainer")
     @PostMapping("/register")
     public ResponseEntity<RegistrationResponse> register(@Valid @RequestBody TrainerRegistrationRequest request) {
         // 1. Look up the specialization entity by name
-        TrainingType specialization = trainingTypeService.findByName(request.getSpecialization())
-                .orElseThrow(() -> new RuntimeException("Training Type not found"));
-        // Build entity using SuperBuilder
+        TrainingType specialization = trainingTypeService.findByName(request.getSpecialization().getTrainingTypeName())
+                .orElseThrow(() -> new RuntimeException("Training Type not found")); // TODO: Use the Nomenclature class here
+        // Build entity using SuperBuilder   // TODO: Move this to the service and perhaps make the service use another class, some kind of mapper
         Trainer trainer = Trainer.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
@@ -50,7 +50,7 @@ public class TrainerController {
     }
 
     // 8. Get Trainer profile
-    @Operation(summary = "Get Trainer Profile by Username")
+    @Operation(summary = "Get Trainer profile by username")
     @GetMapping("/{username}")
     public ResponseEntity<TrainerProfileResponse> getProfile(@PathVariable String username) {
         return trainerService.selectProfile(username)
@@ -65,4 +65,14 @@ public class TrainerController {
                         .build()))
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    // 15. Activate/De-Activate Trainee
+    @Operation(summary = "Activate or Deactivate Trainer")
+    @PatchMapping("/activation")
+    public ResponseEntity<Void> toggleActivation(@Valid @RequestBody TraineeActivationRequest request) {
+        trainerService.toggleActivation(request.getUsername());
+        return ResponseEntity.ok().build();
+    }
+
+
 }

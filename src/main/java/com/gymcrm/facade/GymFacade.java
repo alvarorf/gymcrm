@@ -4,10 +4,8 @@ import com.gymcrm.service.interfaces.AuthService;
 import com.gymcrm.service.interfaces.TraineeService;
 import com.gymcrm.service.interfaces.TrainerService;
 import com.gymcrm.service.interfaces.TrainingService;
-import org.springframework.context.ApplicationContext;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.Getter;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -19,20 +17,18 @@ import java.util.Collections;
 @Component
 public class GymFacade {
 
-    private final ApplicationContext context;
     private final AuthService authService;
-    private final TraineeService traineeService;
-    private final TrainerService trainerService;
-    private final TrainingService trainingService;
+    @Getter private final TraineeService traineeService;
+    @Getter private final TrainerService trainerService;
+    @Getter private final TrainingService trainingService;
 
     // Production constructor (used by Spring)
-    public GymFacade(ApplicationContext context,
+    public GymFacade(
                      AuthService authService,
                      TraineeService traineeService,
                      TrainerService trainerService,
                      TrainingService trainingService) {
 
-        this.context = context;
         this.authService = authService;
         this.traineeService = traineeService;
         this.trainerService = trainerService;
@@ -42,34 +38,11 @@ public class GymFacade {
     // Login logic (manual authentication)
     public boolean login(String username, String password) {
     // Delegate authentication to the AuthService
-            if (authService.authenticate(username, password)) {
-                Authentication auth = new UsernamePasswordAuthenticationToken(
-                        username,
-                        null, // Credential should be null/empty after successful auth for security
-                        Collections.emptyList()
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(auth);
-                return true;
-            }
+        try {
+            authService.authenticate(username, password);
+            return true;
+        } catch (UsernameNotFoundException e) {
             return false;
         }
-
-    // Getter access
-
-    public ApplicationContext getContext() {
-        return context;
-    }
-
-    public TraineeService getTraineeService() {
-        return traineeService;
-    }
-
-    public TrainerService getTrainerService() {
-        return trainerService;
-    }
-
-    public TrainingService getTrainingService() {
-        return trainingService;
-    }
+        }
 }

@@ -134,4 +134,14 @@ public class TrainerServiceImpl implements TrainerService {
             Nomenclature.info(logger, Action.TOGGLE, trainer.isActive());
         });
     }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public void toggleActivation(String username) {
+        trainerDao.findByUsername(username).ifPresent(trainer -> {
+            trainer.setActive(!trainer.isActive());
+            trainerDao.save(trainer);
+            Nomenclature.info(logger, Action.TOGGLE);
+        });
+    }
 }

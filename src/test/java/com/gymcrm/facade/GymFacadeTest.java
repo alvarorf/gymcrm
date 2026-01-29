@@ -1,9 +1,6 @@
 package com.gymcrm.facade;
 
 import com.gymcrm.service.interfaces.AuthService;
-import com.gymcrm.service.interfaces.TraineeService;
-import com.gymcrm.service.interfaces.TrainerService;
-import com.gymcrm.service.interfaces.TrainingService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -11,7 +8,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.ApplicationContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -21,11 +17,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("Gym Facade Unit Tests")
 class GymFacadeTest {
 
-    @Mock private ApplicationContext applicationContext;
     @Mock private AuthService authService;
-    @Mock private TraineeService traineeService;
-    @Mock private TrainerService trainerService;
-    @Mock private TrainingService trainingService;
 
     @InjectMocks
     private GymFacade gymFacade;
@@ -42,7 +34,6 @@ class GymFacadeTest {
         String user = "john.doe";
         String pass = "secret";
         when(authService.authenticate(user, pass)).thenReturn(true);
-        // trainerService does NOT need to be mocked for success because it won't be called
 
         // ACT
         boolean result = gymFacade.login(user, pass);
@@ -95,7 +86,5 @@ class GymFacadeTest {
         assertNotNull(gymFacade.getTraineeService());
         assertNotNull(gymFacade.getTrainerService());
         assertNotNull(gymFacade.getTrainingService());
-
-        verify(applicationContext, times(1)).getBean(TraineeService.class);
     }
 }

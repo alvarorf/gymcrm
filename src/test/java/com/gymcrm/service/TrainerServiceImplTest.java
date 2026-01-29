@@ -82,20 +82,6 @@ class TrainerServiceImplTest {
     }
 
     @Test
-    @DisplayName("AUTHENTICATE: Should return true when credentials match")
-    void authenticate_Success() {
-        // ARRANGE
-        when(trainerDao.findByUsername(MOCK_USER)).thenReturn(Optional.of(sampleTrainer));
-
-        // ACT
-        boolean result = trainerService.authenticate(MOCK_USER, MOCK_PASS);
-
-        // ASSERT
-        assertTrue(result);
-        verify(trainerDao, times(1)).findByUsername(MOCK_USER);
-    }
-
-    @Test
     @DisplayName("UPDATE: Should call DAO save for existing trainer")
     void updateProfile_Success() {
         // ARRANGE

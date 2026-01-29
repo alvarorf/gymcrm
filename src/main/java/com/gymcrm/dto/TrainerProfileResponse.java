@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import java.util.List;
 
 // Requirement 8.b: Full Trainer Profile
 @Data
@@ -16,5 +17,5 @@ public class TrainerProfileResponse {
     private String lastName;  // Requirement 8.b.II
     private TrainingType specialization; // Requirement 8.b.III
     private boolean isActive; // Requirement 8.b.IV
-    private java.util.List<TraineeShortResponse> trainees; // Requirement 8.b.V
+    private List<TraineeShortResponse> trainees; // Requirement 8.b.V
 }

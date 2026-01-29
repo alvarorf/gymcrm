@@ -1,5 +1,9 @@
 package com.gymcrm.service.interfaces;
 
+import com.gymcrm.dto.RegistrationResponse;
+import com.gymcrm.dto.TraineeProfileResponse;
+import com.gymcrm.dto.TraineeRegistrationRequest;
+import com.gymcrm.dto.TraineeUpdateRequest;
 import com.gymcrm.model.Trainee;
 
 import java.util.List;
@@ -9,17 +13,18 @@ Trainee Service class should support possibility to create/update/delete/select 
 profile.
 */
 public interface TraineeService {
-    Trainee createProfile(Trainee trainee);
-    Trainee updateProfile(Trainee trainee);
+    RegistrationResponse createProfile(TraineeRegistrationRequest trainee);
+    TraineeProfileResponse updateProfile(TraineeUpdateRequest trainee);
     void deleteProfile(Long id);
     void deleteProfile(String targetUser); // 13. Delete trainee profile by username.
     Optional<Trainee> selectProfile(Long id);
-    Optional<Trainee> selectTraineeProfile(String targetUser); // 6. Select Trainee profile by username
+    Optional<TraineeProfileResponse> selectTraineeProfile(String targetUser); // 6. Select Trainee profile by username
     void updatePassword(Long id, String newPassword); // 7. Trainee password change
 
     // Non-idempotent (meaning that executing it multiple times does not necessarily
     // produce the same result) action (Notes: 6)
     void toggleActivation(Long id);
+    void toggleActivation(String username);
 
     // 18. Update Trainee's trainers list
     void updateTraineeTrainers(String traineeUsername, List<String> trainerUsernames);

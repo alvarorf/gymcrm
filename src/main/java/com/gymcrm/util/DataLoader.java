@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,7 @@ public class DataLoader {
     private final TrainerRepository trainerRepository;
     private final TrainingRepository trainingRepository;
     private final TrainingTypeRepository trainingTypeRepository;
+    @Autowired   private PasswordEncoder passwordEncoder;
 
     @Autowired
     public DataLoader(TraineeRepository traineeRepository,
@@ -46,45 +48,53 @@ public class DataLoader {
         this.trainingRepository = trainingRepository;
         this.trainingTypeRepository = trainingTypeRepository;
         this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        logger.info("DataLoader initialized with JPA Repositories.");
+        logger.info("DataLoader initialized with JPA Repositories."); // TODO: Use Nomenclature class
     }
 
     @Transactional
     public void loadInitialData(String dataPath) {
         try {
-            logger.info("Attempting to load initial data from: {}", dataPath);
+            logger.info("Attempting to load initial data from: {}", dataPath); // TODO: Use Nomenclature class
             ClassPathResource resource = new ClassPathResource(dataPath);
 
             try (InputStream inputStream = resource.getInputStream()) {
                 DataWrapper data = objectMapper.readValue(inputStream, DataWrapper.class);
 
+
                 // 1. Save training types first (constants)
                 if (data.getTrainingTypes() != null) {
                     trainingTypeRepository.saveAll(data.getTrainingTypes());
-                    logger.info("Saved Training Types");
+                    logger.info("Saved Training Types"); // TODO: Use Nomenclature class
                 }
 
                 // 2. Save trainers (they now have valid specialization IDs to point to)
                 if (data.getTrainers() != null) {
+                    data.getTrainers().forEach(t -> {
+                        t.setPassword(passwordEncoder.encode(t.getPassword()));
+                    });
                     trainerRepository.saveAll(data.getTrainers());
-                    logger.info("Saved Trainers");
+                    logger.info("Saved Trainers"); // TODO: Use Nomenclature class
                 }
 
                 // 3. Save trainees
                 if (data.getTrainees() != null) {
+                    data.getTrainees().forEach(t -> {
+                        // ENCODE the plain text password from JSON before saving to MySQL
+                        t.setPassword(passwordEncoder.encode(t.getPassword()));
+                    });
                     traineeRepository.saveAll(data.getTrainees());
-                    logger.info("Saved Trainees");
+                    logger.info("Saved Trainees"); // TODO: Use Nomenclature class
                 }
 
                 // 4. Save Trainings (must happen last because they refer to Trainees/Trainers)
                 if (data.getTrainings() != null) {
                     trainingRepository.saveAll(data.getTrainings());
-                    logger.info("Successfully persisted {} Trainings.", data.getTrainings().size());
+                    logger.info("Successfully persisted {} Trainings.", data.getTrainings().size()); // TODO: Use Nomenclature class
                 }
 
             }
         } catch (Exception e) {
-            logger.error("Failed to load initial data from path: {}. Error: {}", dataPath, e.getMessage());
+            logger.error("Failed to load initial data from path: {}. Error: {}", dataPath, e.getMessage()); // TODO: Use Nomenclature class
         }
     }
 

@@ -15,6 +15,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -31,6 +32,10 @@ class TraineeServiceImplTest {
     @Mock private TrainerDao trainerDao;
     @Mock private UsernameGenerator usernameGenerator;
     @Mock private PasswordGenerator passwordGenerator;
+    @Mock private PasswordEncoder passwordEncoder;
+
+    @InjectMocks
+    private AuthServiceImpl authService;
 
     @InjectMocks private TraineeServiceImpl traineeService;
 
@@ -49,7 +54,7 @@ class TraineeServiceImplTest {
         sampleTrainee.setFirstName("Jane");
         sampleTrainee.setLastName("Doe");
         sampleTrainee.setUsername(TEST_USERNAME);
-        sampleTrainee.setPassword("oldPassword");
+        sampleTrainee.setPassword(passwordEncoder.encode("oldPassword"));
         sampleTrainee.setDateOfBirth(LocalDate.of(1990, 1, 1));
         sampleTrainee.setAddress("101 Mock Ave");
         sampleTrainee.setActive(true);
@@ -120,7 +125,7 @@ class TraineeServiceImplTest {
         // ARRANGE
         Trainee invalidTrainee = new Trainee();
         invalidTrainee.setFirstName("Jane");
-        invalidTrainee.setLastName(null); // Specifically triggers the second branch of the OR condition
+        invalidTrainee.setLastName(null);
 
         // ACT & ASSERT
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
@@ -157,27 +162,13 @@ class TraineeServiceImplTest {
     }
 
     @Test
-    @DisplayName("5. AUTHENTICATE: Should return true if credentials match.")
-    void authenticate_Success() {
-        // ARRANGE
-        when(traineeDao.findByUsername(TEST_USERNAME)).thenReturn(Optional.of(sampleTrainee));
-
-        // ACT
-        boolean result = traineeService.authenticate(TEST_USERNAME, "oldPassword");
-
-        // ASSERT
-        assertTrue(result);
-        verify(traineeDao, times(1)).findByUsername(TEST_USERNAME);
-    }
-
-    @Test
     @DisplayName("6. SELECT (USERNAME): Should find profile by username.")
     void selectProfile_ByUsername() {
         // ARRANGE
         when(traineeDao.findByUsername(TEST_USERNAME)).thenReturn(Optional.of(sampleTrainee));
 
         // ACT
-        Optional<Trainee> result = traineeService.selectProfile(TEST_USERNAME);
+        Optional<Trainee> result = traineeService.selectTraineeProfile(TEST_USERNAME);
 
         // ASSERT
         assertTrue(result.isPresent());

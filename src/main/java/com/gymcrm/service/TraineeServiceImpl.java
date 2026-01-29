@@ -2,6 +2,11 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
+import com.gymcrm.dto.RegistrationResponse;
+import com.gymcrm.dto.TraineeProfileResponse;
+import com.gymcrm.dto.TraineeRegistrationRequest;
+import com.gymcrm.dto.TraineeUpdateRequest;
+import com.gymcrm.mapper.TraineeMapper;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.service.interfaces.TraineeService;
@@ -40,9 +45,10 @@ public class TraineeServiceImpl implements TraineeService {
     // Why final? Because TraineeDao is a core dependency, injected via the constructor
     private final TraineeDao traineeDao;
     // Non-Core Dependencies. Must NOT be final, for injection via Setter
-    private UsernameGenerator usernameGenerator;  // TODO: We can have a credentials generator for both (generalize)
+    private UsernameGenerator usernameGenerator;
     private PasswordGenerator passwordGenerator;
     private TrainerDao trainerDao;
+    private TraineeMapper traineeMapper;
 
     // Logger
     private static final Logger logger = LoggerFactory.getLogger(TraineeServiceImpl.class);
@@ -51,7 +57,6 @@ public class TraineeServiceImpl implements TraineeService {
     public TraineeServiceImpl(TraineeDao traineeDao)
     {
         this.traineeDao = traineeDao;
-        // Output: [CONSTRUCTOR] Context initialized for Trainee
         Nomenclature.info(logger, Action.INITIALIZE);
     }
 
@@ -64,36 +69,50 @@ public class TraineeServiceImpl implements TraineeService {
     @Autowired
     public void setTrainerDao(TrainerDao trainerDao) { this.trainerDao = trainerDao; }
 
+    @Autowired
+    public void setTraineeMapper(TraineeMapper traineeeMapper) { this.traineeMapper = traineeMapper; }
+
     @Override
-    public Trainee createProfile(Trainee trainee) { // TODO: Split up into at least two methods OR perhaps use the credentials generator service to generate the password, username, set them and return the model
+    public RegistrationResponse createProfile(TraineeRegistrationRequest request) {
         Nomenclature.info(logger, Action.CREATE);
-        String username = usernameGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName());
-        String password = passwordGenerator.generatePassword();
 
-        trainee.setUsername(username);
-        trainee.setPassword(password);
+        // Map request to Entity
+        Trainee trainee = traineeMapper.toEntity(request);
 
+        // Generate credentials (business logic stays in service)
+        trainee.setUsername(usernameGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName()));
+        trainee.setPassword(passwordGenerator.generatePassword());
+
+        // Persist
         Trainee savedTrainee = traineeDao.save(trainee);
+
         Nomenclature.success(logger, Action.CREATE, savedTrainee.getUsername());
-        return savedTrainee;
+
+        // 4. Map Entity back to the specific Registration DTO
+        return traineeMapper.toRegistrationResponse(savedTrainee);
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public Trainee updateProfile(Trainee trainee) {
-        // Output: [updateProfile] Attempting to update Trainee
-        Nomenclature.info(logger, Action.UPDATE);
-        if (trainee.getFirstName() == null || trainee.getLastName() == null) {
-            throw new IllegalArgumentException(Nomenclature.MSG_REQUIRED);
-        }
-        return traineeDao.save(trainee);
+    public TraineeProfileResponse updateProfile(TraineeUpdateRequest request) {
+        // Fetch
+        Trainee existing = traineeDao.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(request.getUsername().getClass()))); // TODO: Possible bug. Check Nomenclature class
+
+        // Map update
+        traineeMapper.updateEntityFromRequest(request, existing);
+
+        // Save & return as DTO
+        Trainee updated = traineeDao.save(existing);
+        return traineeMapper.toProfileResponse(updated);
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public Optional<Trainee> selectTraineeProfile(String targetUser) {
-        Nomenclature.info(logger, Action.FETCH, targetUser); // Auto: [selectProfile] Attempting to retrieve context for jane.doe Trainee
-        return traineeDao.findByUsername(targetUser);
+    public Optional<TraineeProfileResponse> selectTraineeProfile(String username) {
+        Nomenclature.info(logger, Action.FETCH, username);
+        return traineeDao.findByUsername(username)
+                .map(traineeMapper::toProfileResponse);
     }
 
     @Override
@@ -137,6 +156,17 @@ public class TraineeServiceImpl implements TraineeService {
             Nomenclature.info(logger, Action.TOGGLE);
         });
     }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public void toggleActivation(String username) {
+        traineeDao.findByUsername(username).ifPresent(trainee -> {
+            trainee.setActive(!trainee.isActive());
+            traineeDao.save(trainee);
+            Nomenclature.info(logger, Action.TOGGLE);
+        });
+    }
+
 
     // 18. Update Trainee's trainers list
     @Override
