@@ -12,8 +12,7 @@ import org.springframework.stereotype.Service;
 import com.gymcrm.util.Nomenclature;
 import com.gymcrm.util.Nomenclature.Action;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.slf4j.*;
@@ -84,7 +83,7 @@ public class TrainerServiceImpl implements TrainerService {
     {
         Nomenclature.info(logger, Action.FETCH, id);
         return trainerDao.findById(id)
-                .map(trainerMapper::toProfileResponse); //  TODO: Fix the NullPointerException thrown here
+                .map(trainerMapper::toProfileResponse);
     }
 
     @Override

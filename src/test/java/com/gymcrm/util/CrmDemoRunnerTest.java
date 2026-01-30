@@ -1,23 +1,14 @@
 package com.gymcrm.util;
 
-import com.gymcrm.dto.RegistrationResponse;
-import com.gymcrm.dto.TraineeRegistrationRequest;
-import com.gymcrm.dto.TrainerProfileResponse;
+import com.gymcrm.dto.*;
 import com.gymcrm.facade.GymFacade;
-import com.gymcrm.mapper.TraineeMapper;
-import com.gymcrm.mapper.TrainerMapper;
-import com.gymcrm.model.Trainee;
-import com.gymcrm.model.Trainer;
-import com.gymcrm.model.TrainingType;
-import com.gymcrm.service.interfaces.TraineeService;
-import com.gymcrm.service.interfaces.TrainerService;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import com.gymcrm.mapper.*;
+import com.gymcrm.model.*;
+import com.gymcrm.service.interfaces.*;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
 
@@ -41,34 +32,22 @@ class CrmDemoRunnerTest {
     @DisplayName("1. DEMO RUNNER: Should call createProfile and selectProfile through the Facade.")
     void runDemo_shouldExecuteWorkflow() {
         // --- ARRANGE ---
-        // Setup mock entities
-        Trainee mockTraineeEntity = Trainee.builder()
-                .username("john.doe")
-                .password("securePass123")
-                .build();
+        Trainee mockTraineeEntity = Trainee.builder().username("john.doe").build();
+        Trainer mockTrainerEntity = Trainer.builder().firstName("Michael").build();
 
-        TrainingType motivationType = TrainingType.builder()
-                .trainingTypeName("Motivation")
-                .build();
+        // Create real DTOs to avoid stubbing the mappers, or stub them:
+        RegistrationResponse mockRegResponse = RegistrationResponse.builder().username("john.doe").build();
+        TrainerProfileResponse mockTrainerResponse = TrainerProfileResponse.builder().firstName("Michael").build();
 
-        Trainer mockTrainerEntity = Trainer.builder()
-                .firstName("Michael")
-                .lastName("Scott")
-                .specialization(motivationType)
-                .build();
-
-        // Use Mappers to generate expected DTO responses
-        RegistrationResponse mockRegResponse = traineeMapper.toRegistrationResponse(mockTraineeEntity);
-        TrainerProfileResponse mockTrainerResponse = trainerMapper.toProfileResponse(mockTrainerEntity);
-
-        // Stub Facade and Services
+        // Stub Facade
         when(gymFacade.getTraineeService()).thenReturn(traineeService);
         when(gymFacade.getTrainerService()).thenReturn(trainerService);
 
-        // Fix: Use DTO types for parameters and return values
+        // Stub Services
         when(traineeService.createProfile(any(TraineeRegistrationRequest.class)))
                 .thenReturn(mockRegResponse);
 
+        // This now works because mockTrainerResponse is a real object, not null
         when(trainerService.selectTrainerProfile(101L))
                 .thenReturn(Optional.of(mockTrainerResponse));
 
@@ -76,11 +55,8 @@ class CrmDemoRunnerTest {
         runner.run(null);
 
         // --- ASSERT ---
-        // Verify the logic inside CrmDemoRunner was executed
-        verify(traineeService, times(1)).createProfile(any(TraineeRegistrationRequest.class));
-        verify(trainerService, times(1)).selectTrainerProfile(101L);
-
-        // Cleanup security context after test
-        SecurityContextHolder.clearContext();
+        verify(traineeService).createProfile(any(TraineeRegistrationRequest.class));
+        verify(trainerService).selectTrainerProfile(101L);
     }
+
 }

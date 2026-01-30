@@ -42,6 +42,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Query MySQL via DAOs
+        // TODO: Determine if this should actually be done here, in the service. If this is a mapping, perhaps we need a mapper class. This method seems to be doing multiple things at once (or not? What do you think??)
         return traineeDao.findByUsername(username)
                 .map(t -> User.builder()
                         .username(t.getUsername())
@@ -59,41 +60,29 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void changePassword(String username, String oldPassword, String newPassword) { // TODO: Improve this method
+    public void changePassword(String username, String oldPassword, String newPassword) {
         Nomenclature.info(logger, Nomenclature.Action.UPDATE_SENSITIVE, username);
 
-        // 1. First, authenticate the user with the old password
+        // Authenticate the user with the old password
         // This will throw an AuthenticationException if the old password doesn't match
         authenticate(username, oldPassword);
 
-        // 2. If authentication passed, update the user in the database
-        // Note: In a production app, the newPassword should be encoded here via PasswordEncoder
-        boolean updated = false;
+        // If authentication passed, update the user in the database
+        // The newPassword should be encoded here via PasswordEncoder
+        boolean updated = updatePasswordInStorage(username, newPassword);
 
-        // Check Trainees
-        var traineeOpt = traineeDao.findByUsername(username);
-        if (traineeOpt.isPresent()) {
-            var trainee = traineeOpt.get();
-            trainee.setPassword(newPassword);
-            traineeDao.save(trainee);
-            updated = true;
-        }
-
-        // If not found in trainees, check Trainers
-        if (!updated) {
-            var trainerOpt = trainerDao.findByUsername(username);
-            if (trainerOpt.isPresent()) {
-                var trainer = trainerOpt.get();
-                trainer.setPassword(newPassword);
-                trainerDao.save(trainer);
-                updated = true;
-            }
-        }
-
-        if (!updated) {
-            throw new UsernameNotFoundException(Nomenclature.getNotFoundMsg(username.getClass()));
-        }
+        if (!updated) {  throw new UsernameNotFoundException(Nomenclature.getNotFoundMsg(username.getClass()));  }
 
         Nomenclature.success(logger, Nomenclature.Action.UPDATE_SENSITIVE, username);
     }
+
+    private boolean updatePasswordInStorage(String username, String newPassword) {
+        return traineeDao.findByUsername(username)
+                .map(t -> { t.setPassword(newPassword); traineeDao.save(t); return true; })
+                .orElseGet(() -> trainerDao.findByUsername(username)
+                        .map(t -> { t.setPassword(newPassword); trainerDao.save(t); return true; })
+                        .orElse(false));
+    }
+
+
 }
