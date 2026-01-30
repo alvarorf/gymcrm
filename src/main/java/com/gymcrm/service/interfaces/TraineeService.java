@@ -4,7 +4,6 @@ import com.gymcrm.dto.RegistrationResponse;
 import com.gymcrm.dto.TraineeProfileResponse;
 import com.gymcrm.dto.TraineeRegistrationRequest;
 import com.gymcrm.dto.TraineeUpdateRequest;
-import com.gymcrm.model.Trainee;
 
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +16,7 @@ public interface TraineeService {
     TraineeProfileResponse updateProfile(TraineeUpdateRequest trainee);
     void deleteProfile(Long id);
     void deleteProfile(String targetUser); // 13. Delete trainee profile by username.
-    Optional<Trainee> selectProfile(Long id);
+    Optional<TraineeProfileResponse> selectProfile(Long id);
     Optional<TraineeProfileResponse> selectTraineeProfile(String targetUser); // 6. Select Trainee profile by username
     void updatePassword(Long id, String newPassword); // 7. Trainee password change
 

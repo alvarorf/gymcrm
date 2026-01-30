@@ -1,8 +1,8 @@
 package com.gymcrm.controller;
 
 import com.gymcrm.dto.*;
-import com.gymcrm.model.Trainee;
 import com.gymcrm.service.interfaces.TraineeService;
+import com.gymcrm.service.interfaces.TrainerService;
 import com.gymcrm.util.Nomenclature;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.stream.Collectors;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/trainees")
@@ -19,12 +19,14 @@ import java.util.stream.Collectors;
 public class TraineeController {
 
     private final TraineeService traineeService;
+    private final TrainerService trainerService;
 
-    public TraineeController(TraineeService traineeService) {
+    public TraineeController(TraineeService traineeService, TrainerService trainerService) {
         this.traineeService = traineeService;
+        this.trainerService = trainerService;
     }
 
-    // 1. Trainee Registration
+    // 1. Trainee registration
     @Operation(summary = "Register a new trainee")
     @PostMapping("/register")
     public ResponseEntity<RegistrationResponse> register(@Valid @RequestBody TraineeRegistrationRequest request) {
@@ -39,17 +41,17 @@ public class TraineeController {
     public ResponseEntity<TraineeProfileResponse> getProfile(@PathVariable String username) {
         return traineeService.selectTraineeProfile(username)
                 .map(ResponseEntity::ok)
-                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(username.getClass()))); // TODO: Possible bug, should also work with a string. Perhaps overload the method getNotFoundMsg or other solution
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(username)));
     }
 
-    // 6. Update Trainee Profile
+    // 6. Update trainee profile
     @Operation(summary = "Update trainee profile")
     @PutMapping
     public ResponseEntity<TraineeProfileResponse> update(@Valid @RequestBody TraineeUpdateRequest request) {
         return ResponseEntity.ok(traineeService.updateProfile(request));
     }
 
-    // 7. Delete Trainee Profile
+    // 7. Delete trainee profile
     @Operation(summary = "Delete trainee profile")
     @DeleteMapping("/{username}")
     public ResponseEntity<Void> delete(@PathVariable String username) {
@@ -57,11 +59,18 @@ public class TraineeController {
         return ResponseEntity.ok().build();
     }
 
-    // 15. Activate/De-Activate Trainee
-    @Operation(summary = "Activate or Deactivate Trainee")
+    // Activate/de-activate trainee
+    @Operation(summary = "Activate or deactivate Trainee")
     @PatchMapping("/activation")
-    public ResponseEntity<Void> toggleActivation(@Valid @RequestBody TraineeActivationRequest request) {
+    public ResponseEntity<Void> toggleActivation(@Valid @RequestBody ActivationRequest request) {
         traineeService.toggleActivation(request.getUsername());
         return ResponseEntity.ok().build();
+    }
+
+    // 10. Get not assigned on trainee active trainers
+    @Operation(summary = "Get active trainers not assigned to the given trainee")
+    @GetMapping("/{username}/unassigned-trainers")
+    public ResponseEntity<List<TrainerShortResponse>> getUnassignedTrainers(@PathVariable String username) {
+        return ResponseEntity.ok(trainerService.getUnassignedActiveTrainersByTraineeUsername(username));
     }
 }

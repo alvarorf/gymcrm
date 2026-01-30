@@ -36,8 +36,9 @@ public final class Nomenclature {
         };
     }
 
-    // --- Validation messages ---
+    // --- Validation and server error messages ---
     public static final String MSG_REQUIRED = "First Name and Last Name are required.";
+    public static final String MSG_INTERNAL_ERROR = "An unexpected error occurred. Please try again later.";
 
     // It can handle optional context (IDs, Usernames, Booleans)
     public static void info(Logger logger, Action action, Object... context) {
@@ -77,14 +78,18 @@ public final class Nomenclature {
         }
     }
 
-
-
     private static StackWalker.StackFrame getCallerFrame() {
         return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE)
                 .walk(frames -> frames.skip(2).findFirst().orElseThrow());
     }
 
+    // Returns a standard error message for a class type.
     public static String getNotFoundMsg(Class<?> clazz) {
         return clazz.getSimpleName() + " not found";
+    }
+
+    // Returns a standard error message for a specific identifier.
+    public static String getNotFoundMsg(String identifier) {
+        return "Record not found for: " + identifier;
     }
 }

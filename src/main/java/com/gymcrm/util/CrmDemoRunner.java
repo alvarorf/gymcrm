@@ -1,8 +1,9 @@
 package com.gymcrm.util;
 
+import com.gymcrm.dto.RegistrationResponse;
+import com.gymcrm.dto.TraineeRegistrationRequest;
+import com.gymcrm.dto.TrainerProfileResponse;
 import com.gymcrm.facade.GymFacade;
-import com.gymcrm.model.Trainee;
-import com.gymcrm.model.Trainer;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,16 +35,16 @@ public class CrmDemoRunner implements ApplicationRunner {
 
         System.out.println("=== Gym CRM system initialized ===");
 
-        Trainee trainee = Trainee.builder()
+        TraineeRegistrationRequest request = TraineeRegistrationRequest.builder()
                 .firstName("John")
                 .lastName("Doe")
                 .address("123 Main St")
                 .build();
 
-        Trainee created = gym.getTraineeService().createProfile(trainee);
-        System.out.println("Created trainee: " + created.getUsername());
+        RegistrationResponse createdTrainee = gym.getTraineeService().createProfile(request);
+        System.out.println("Created trainee: " + createdTrainee.getUsername());
 
-        Optional<Trainer> trainer = gym.getTrainerService().selectProfile(101L);
+        Optional<TrainerProfileResponse> trainer = gym.getTrainerService().selectTrainerProfile(101L);
         trainer.ifPresent(t ->
                 System.out.println("Trainer: " + t.getFirstName())
         );

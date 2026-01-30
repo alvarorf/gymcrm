@@ -12,6 +12,7 @@ import com.gymcrm.model.Trainer;
 import com.gymcrm.service.interfaces.TraineeService;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
+import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 /*
 Trainee Service class should support possibility to create/update/delete/select Trainee
@@ -44,35 +46,25 @@ It is a specialization (implementation) of @Component and allows TraineeServiceI
 public class TraineeServiceImpl implements TraineeService {
     // Why final? Because TraineeDao is a core dependency, injected via the constructor
     private final TraineeDao traineeDao;
+    private final TraineeMapper traineeMapper;
     // Non-Core Dependencies. Must NOT be final, for injection via Setter
-    private UsernameGenerator usernameGenerator;
-    private PasswordGenerator passwordGenerator;
-    private TrainerDao trainerDao;
-    private TraineeMapper traineeMapper;
+    @Autowired @Setter private UsernameGenerator usernameGenerator;
+    @Autowired @Setter private PasswordGenerator passwordGenerator;
+    @Autowired @Setter private TrainerDao trainerDao;
 
     // Logger
     private static final Logger logger = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
     // Constructor-based injection (only for core dependencies)
-    public TraineeServiceImpl(TraineeDao traineeDao)
+    public TraineeServiceImpl(TraineeDao traineeDao, TraineeMapper traineeMapper)
     {
         this.traineeDao = traineeDao;
+        this.traineeMapper = traineeMapper;
         Nomenclature.info(logger, Action.INITIALIZE);
     }
 
-    // Setter-based injection for the non-core dependencies
-    @Autowired
-    public void setUsernameGenerator(UsernameGenerator usernameGenerator) { this.usernameGenerator = usernameGenerator; }
-
-    @Autowired
-    public void setPasswordGenerator(PasswordGenerator passwordGenerator) { this.passwordGenerator = passwordGenerator; }
-    @Autowired
-    public void setTrainerDao(TrainerDao trainerDao) { this.trainerDao = trainerDao; }
-
-    @Autowired
-    public void setTraineeMapper(TraineeMapper traineeeMapper) { this.traineeMapper = traineeMapper; }
-
     @Override
+    @Transactional
     public RegistrationResponse createProfile(TraineeRegistrationRequest request) {
         Nomenclature.info(logger, Action.CREATE);
 
@@ -88,7 +80,7 @@ public class TraineeServiceImpl implements TraineeService {
 
         Nomenclature.success(logger, Action.CREATE, savedTrainee.getUsername());
 
-        // 4. Map Entity back to the specific Registration DTO
+        // Map Entity back to the specific Registration DTO
         return traineeMapper.toRegistrationResponse(savedTrainee);
     }
 
@@ -97,7 +89,7 @@ public class TraineeServiceImpl implements TraineeService {
     public TraineeProfileResponse updateProfile(TraineeUpdateRequest request) {
         // Fetch
         Trainee existing = traineeDao.findByUsername(request.getUsername())
-                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(request.getUsername().getClass()))); // TODO: Possible bug. Check Nomenclature class
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(request.getUsername())));
 
         // Map update
         traineeMapper.updateEntityFromRequest(request, existing);
@@ -117,9 +109,10 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public Optional<Trainee> selectProfile(Long id) {
+    public Optional<TraineeProfileResponse> selectProfile(Long id) {
         Nomenclature.info(logger, Action.FETCH, id);
-        return traineeDao.findById(id);
+        return traineeDao.findById(id)
+                .map(traineeMapper::toProfileResponse);
     }
 
     @Override

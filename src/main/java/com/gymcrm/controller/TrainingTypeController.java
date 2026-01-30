@@ -1,6 +1,7 @@
 package com.gymcrm.controller;
 
 import com.gymcrm.dto.TrainingTypeResponse;
+import com.gymcrm.mapper.TrainingTypeMapper;
 import com.gymcrm.service.interfaces.TrainingTypeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,16 +19,18 @@ import java.util.stream.Collectors;
 public class TrainingTypeController {
 
     private final TrainingTypeService trainingTypeService;
+    private final TrainingTypeMapper trainingTypeMapper;
 
-    public TrainingTypeController(TrainingTypeService trainingTypeService) {
+    public TrainingTypeController(TrainingTypeService trainingTypeService, TrainingTypeMapper trainingTypeMapper) {
         this.trainingTypeService = trainingTypeService;
+        this.trainingTypeMapper = trainingTypeMapper;
     }
 
-    @Operation(summary = "Get all available Training Types")
+    @Operation(summary = "Get all available training types")
     @GetMapping
     public ResponseEntity<List<TrainingTypeResponse>> getTrainingTypes() {
         List<TrainingTypeResponse> types = trainingTypeService.getAllTrainingTypes().stream()
-                .map(t -> new TrainingTypeResponse(t.getId(), t.getTrainingTypeName()))
+                .map(trainingTypeMapper::toResponse)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(types);

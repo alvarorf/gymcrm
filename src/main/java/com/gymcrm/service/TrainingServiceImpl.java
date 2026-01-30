@@ -3,8 +3,15 @@ package com.gymcrm.service;
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.dao.interfaces.TrainingDao;
+import com.gymcrm.dto.TraineeTrainingResponse;
+import com.gymcrm.dto.TrainerTrainingResponse;
+import com.gymcrm.dto.TrainingCreateRequest;
+import com.gymcrm.mapper.TrainingMapper;
+import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
 import com.gymcrm.service.interfaces.TrainingService;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +19,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import com.gymcrm.util.Nomenclature;
 import com.gymcrm.util.Nomenclature.Action;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -26,8 +32,9 @@ public class TrainingServiceImpl implements TrainingService {
     private final TrainingDao trainingDao;
 
     // Non-core dependencies (needed for username filtering), injected via setters
-    private TraineeDao traineeDao;
-    private TrainerDao trainerDao; // Needed for username filtering
+    @Setter private TraineeDao traineeDao;
+    @Setter private TrainerDao trainerDao;
+    @Setter private TrainingMapper trainingMapper;
 
     public TrainingServiceImpl(TrainingDao trainingDao) {
         this.trainingDao = trainingDao;
@@ -43,18 +50,23 @@ public class TrainingServiceImpl implements TrainingService {
         Nomenclature.info(logger, Action.INITIALIZE);
     }
 
-    @Autowired
-    public void setTraineeDao(TraineeDao traineeDao) { this.traineeDao = traineeDao; }
-
-    @Autowired
-    public void setTrainerDao(TrainerDao trainerDao) { this.trainerDao = trainerDao; }
-
     // Training Service class should support possibility to create/select Training profile.
     @Override
     @PreAuthorize("isAuthenticated()")
-    public Training createProfile(Training training) {
-        Nomenclature.info(logger, Action.CREATE, training.getTrainingName());
-        return trainingDao.save(training);
+    public void createProfile(TrainingCreateRequest request) {
+        Nomenclature.info(logger, Action.CREATE, request.getTrainingName());
+
+        // Logic moved from Controller to Service
+        Trainee trainee = traineeDao.findByUsername(request.getTraineeUsername())
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(request.getTraineeUsername())));
+
+        Trainer trainer = trainerDao.findByUsername(request.getTrainerUsername())
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(request.getTrainerUsername())));
+
+        Training training = trainingMapper.toEntity(trainee, trainer, request);
+        trainingDao.save(training);
+
+        Nomenclature.success(logger, Action.CREATE, request.getTrainingName());
     }
 
     @Override
@@ -88,29 +100,28 @@ public class TrainingServiceImpl implements TrainingService {
     // 14. Get Trainee Trainings List by criteria
     @Override
     @PreAuthorize("isAuthenticated()")
-    public List<Training> getTraineeTrainings(String username, LocalDate from, LocalDate to, String trainerName, String type) {
+    public List<TraineeTrainingResponse> getTraineeTrainings(String username, LocalDate from, LocalDate to, String trainerName, String type) {
         return trainingDao.findAll().stream()
-                .filter(t -> traineeDao.findById(t.getId())
-                        .map(trainee -> trainee.getUsername().equals(username)).orElse(false))
+                // Access entity relationships directly instead of searching IDs manually
+                .filter(t -> t.getTrainee().getUsername().equals(username))
                 .filter(t -> (from == null || !t.getTrainingDate().isBefore(from)))
                 .filter(t -> (to == null || !t.getTrainingDate().isAfter(to)))
-                .filter(t -> (trainerName == null || trainerDao.findById(t.getId())
-                        .map(tr -> tr.getFirstName().equalsIgnoreCase(trainerName)).orElse(false)))
+                .filter(t -> (trainerName == null || t.getTrainer().getFirstName().equalsIgnoreCase(trainerName)))
                 .filter(t -> (type == null || t.getTrainingType().getTrainingTypeName().equalsIgnoreCase(type)))
+                .map(trainingMapper::toTraineeTrainingResponse)
                 .collect(Collectors.toList());
     }
 
     // 15. Get Trainer Trainings List by criteria
     @Override
     @PreAuthorize("isAuthenticated()")
-    public List<Training> getTrainerTrainings(String username, LocalDate from, LocalDate to, String traineeName) {
+    public List<TrainerTrainingResponse> getTrainerTrainings(String username, LocalDate from, LocalDate to, String traineeName) {
         return trainingDao.findAll().stream()
-                .filter(t -> trainerDao.findById(t.getId())
-                        .map(trainer -> trainer.getUsername().equals(username)).orElse(false))
+                .filter(t -> t.getTrainer().getUsername().equals(username))
                 .filter(t -> (from == null || !t.getTrainingDate().isBefore(from)))
                 .filter(t -> (to == null || !t.getTrainingDate().isAfter(to)))
-                .filter(t -> (traineeName == null || traineeDao.findById(t.getId())
-                        .map(tr -> tr.getFirstName().equalsIgnoreCase(traineeName)).orElse(false)))
+                .filter(t -> (traineeName == null || t.getTrainee().getFirstName().equalsIgnoreCase(traineeName)))
+                .map(trainingMapper::toTrainerTrainingResponse)
                 .collect(Collectors.toList());
     }
 }

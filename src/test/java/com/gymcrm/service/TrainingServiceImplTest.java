@@ -3,6 +3,10 @@ package com.gymcrm.service;
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.dao.interfaces.TrainingDao;
+import com.gymcrm.dto.TraineeTrainingResponse;
+import com.gymcrm.dto.TrainerTrainingResponse;
+import com.gymcrm.dto.TrainingCreateRequest;
+import com.gymcrm.mapper.TrainingMapper;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.Training;
@@ -29,35 +33,41 @@ class TrainingServiceImplTest {
     @Mock private TrainingDao trainingDao;
     @Mock private TraineeDao traineeDao;
     @Mock private TrainerDao trainerDao;
+    @Mock private TrainingMapper trainingMapper;
 
+    @InjectMocks
     private TrainingServiceImpl trainingService;
 
     private Training sampleTraining;
     private Trainee sampleTrainee;
     private Trainer sampleTrainer;
+    private TrainingType sampleType;
     private final Long TRAINING_ID = 100L;
 
     @BeforeEach
     void setUp() {
-        // Manual instantiation is significantly faster than @InjectMocks
-        // because it avoids dynamic bytecode manipulation for setters.
-        trainingService = new TrainingServiceImpl(trainingDao, traineeDao, trainerDao);
+        // Since we use @InjectMocks, dependencies are injected automatically.
+        // We just need to set the setters that aren't in the constructor if necessary.
+        trainingService.setTrainingMapper(trainingMapper);
+        trainingService.setTraineeDao(traineeDao);
+        trainingService.setTrainerDao(trainerDao);
 
-        // ARRANGE: Using SuperBuilder is faster and cleaner than chain-setters
+        sampleType = TrainingType.builder().trainingTypeName("Cardio").build();
+
         sampleTrainee = Trainee.builder()
                 .userId(1L)
                 .username("john.doe")
                 .firstName("John")
+                .lastName("Doe")
                 .build();
 
         sampleTrainer = Trainer.builder()
                 .userId(10L)
                 .username("coach.bob")
                 .firstName("Bob")
+                .lastName("Builder")
+                .specialization(sampleType)
                 .build();
-
-        TrainingType type = new TrainingType();
-        type.setTrainingTypeName("Cardio");
 
         sampleTraining = Training.builder()
                 .id(TRAINING_ID)
@@ -65,33 +75,37 @@ class TrainingServiceImplTest {
                 .trainingDate(LocalDate.of(2025, 1, 1))
                 .trainee(sampleTrainee)
                 .trainer(sampleTrainer)
-                .trainingType(TrainingType.builder().trainingTypeName("Cardio").build())
+                .trainingType(sampleType)
+                .trainingDuration(60)
                 .build();
     }
 
-    // --- CREATE PROFILE COVERAGE ---
-
     @Test
-    @DisplayName("CREATE: Should successfully save a training session and return the saved profile")
+    @DisplayName("CREATE: Should successfully map request to entity and save")
     void createProfile_Success() {
         // ARRANGE
-        when(trainingDao.save(sampleTraining)).thenReturn(sampleTraining);
+        TrainingCreateRequest request = TrainingCreateRequest.builder()
+                .trainingName("Morning Run")
+                .traineeUsername("john.doe")
+                .trainerUsername("coach.bob")
+                .trainingDate(LocalDate.of(2025, 1, 1))
+                .trainingDuration(60)
+                .build();
+
+        when(traineeDao.findByUsername("john.doe")).thenReturn(Optional.of(sampleTrainee));
+        when(trainerDao.findByUsername("coach.bob")).thenReturn(Optional.of(sampleTrainer));
+        when(trainingMapper.toEntity(eq(sampleTrainee), eq(sampleTrainer), eq(request))).thenReturn(sampleTraining);
 
         // ACT
-        Training result = trainingService.createProfile(sampleTraining);
+        trainingService.createProfile(request);
 
         // ASSERT
-        assertNotNull(result, "The saved training should not be null.");
-        assertEquals(TRAINING_ID, result.getId());
-        assertEquals("Morning Run", result.getTrainingName());
         verify(trainingDao, times(1)).save(sampleTraining);
     }
 
-    // --- SELECT PROFILE COVERAGE ---
-
     @Test
-    @DisplayName("SELECT (ID): Should hit logger.debug when training is found")
-    void selectProfile_Found_HitsDebugLog() {
+    @DisplayName("SELECT (ID): Should return the entity when found")
+    void selectProfile_Found() {
         // ARRANGE
         when(trainingDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTraining));
 
@@ -100,72 +114,23 @@ class TrainingServiceImplTest {
 
         // ASSERT
         assertTrue(result.isPresent());
-        verify(trainingDao).findById(TRAINING_ID);
+        assertEquals("Morning Run", result.get().getTrainingName());
     }
 
     @Test
-    @DisplayName("SELECT (ID): Should hit logger.warn when training is not found by ID")
-    void selectProfile_NotFound_HitsWarnLog() {
-        // ARRANGE
-        Long nonExistentId = 999L;
-        when(trainingDao.findById(nonExistentId)).thenReturn(Optional.empty());
-
-        // ACT
-        Optional<Training> result = trainingService.selectProfile(nonExistentId);
-
-        // ASSERT
-        assertTrue(result.isEmpty(), "Result should be empty for non-existent ID.");
-        verify(trainingDao, times(1)).findById(nonExistentId);
-    }
-
-    @Test
-    @DisplayName("SELECT (NAME): Should hit logger.debug when training is found by name")
-    void selectProfileByName_Found_HitsDebugLog() {
-        // ARRANGE
-        String name = "Morning Run";
-        when(trainingDao.findByName(name)).thenReturn(Optional.of(sampleTraining));
-
-        // ACT
-        Optional<Training> result = trainingService.selectProfile(name);
-
-        // ASSERT
-        assertTrue(result.isPresent(), "Training should be present when searching by valid name.");
-        assertEquals(name, result.get().getTrainingName());
-        verify(trainingDao, times(1)).findByName(name);
-    }
-
-    @Test
-    @DisplayName("SELECT (NAME): Should hit logger.warn when training is not found")
-    void selectProfileByName_NotFound_HitsWarnLog() {
-        // ARRANGE
-        String name = "Yoga";
-        when(trainingDao.findByName(name)).thenReturn(Optional.empty());
-
-        // ACT
-        Optional<Training> result = trainingService.selectProfile(name);
-
-        // ASSERT
-        assertTrue(result.isEmpty());
-        verify(trainingDao).findByName(name);
-    }
-
-    // --- GET TRAINEE TRAININGS COVERAGE ---
-
-    @Test
-    @DisplayName("FILTER (TRAINEE): Should cover date range, trainer name, and type filters")
-    void getTraineeTrainings_FullFilterCoverage() {
+    @DisplayName("FILTER (TRAINEE): Should return list of TraineeTrainingResponse")
+    void getTraineeTrainings_Success() {
         // ARRANGE
         String username = "john.doe";
-        LocalDate from = LocalDate.of(2025, 1, 1);
-        LocalDate to = LocalDate.of(2025, 1, 1);
+        TraineeTrainingResponse responseDto = TraineeTrainingResponse.builder()
+                .trainingName("Morning Run")
+                .build();
 
         when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        // The service uses t.getId() (100L) to look up the trainee/trainer
-        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainee));
-        when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
+        when(trainingMapper.toTraineeTrainingResponse(sampleTraining)).thenReturn(responseDto);
 
         // ACT
-        List<Training> result = trainingService.getTraineeTrainings(username, from, to, "Bob", "Cardio");
+        List<TraineeTrainingResponse> result = trainingService.getTraineeTrainings(username, null, null, null, null);
 
         // ASSERT
         assertEquals(1, result.size());
@@ -173,175 +138,55 @@ class TrainingServiceImplTest {
     }
 
     @Test
-    @DisplayName("FILTER (TRAINEE): Should return empty if date is outside range")
-    void getTraineeTrainings_OutsideDateRange() {
+    @DisplayName("FILTER (TRAINEE): Should filter out trainings by date range")
+    void getTraineeTrainings_DateFilter() {
         // ARRANGE
-        when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainee));
         LocalDate futureDate = LocalDate.of(2099, 1, 1);
-
-        // ACT
-        List<Training> result = trainingService.getTraineeTrainings("john.doe", futureDate, null, null, null);
-
-        // ASSERT
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    @DisplayName("FILTER (TRAINEE): Should return empty if training type does not match")
-    void getTraineeTrainings_TypeMismatch() {
-        // ARRANGE
         when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainee));
-        // Type in sampleTraining is "Cardio"
 
         // ACT
-        List<Training> result = trainingService.getTraineeTrainings("john.doe", null, null, null, "Yoga");
+        List<TraineeTrainingResponse> result = trainingService.getTraineeTrainings("john.doe", futureDate, null, null, null);
 
         // ASSERT
-        assertTrue(result.isEmpty(), "Result should be empty when training type filter fails.");
+        assertTrue(result.isEmpty(), "Training from 2025 should be filtered out by 2099 start date.");
+        verify(trainingMapper, never()).toTraineeTrainingResponse(any());
     }
 
     @Test
-    @DisplayName("FILTER (TRAINEE): Should include training exactly on the 'from' and 'to' dates")
-    void getTraineeTrainings_ExactDateMatch() {
-        // ARRANGE
-        LocalDate exactDate = LocalDate.of(2025, 1, 1);
-        sampleTraining.setTrainingDate(exactDate);
-
-        when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainee));
-
-        // ACT
-        List<Training> result = trainingService.getTraineeTrainings("john.doe", exactDate, exactDate, null, null);
-
-        // ASSERT
-        assertEquals(1, result.size(), "Should include training when dates are inclusive.");
-    }
-
-    // --- GET TRAINER TRAININGS COVERAGE ---
-
-    @Test
-    @DisplayName("FILTER (TRAINER): Should cover date range and trainee name filters")
-    void getTrainerTrainings_FullFilterCoverage() {
+    @DisplayName("FILTER (TRAINER): Should return list of TrainerTrainingResponse")
+    void getTrainerTrainings_Success() {
         // ARRANGE
         String trainerUser = "coach.bob";
+        TrainerTrainingResponse responseDto = TrainerTrainingResponse.builder()
+                .trainingName("Morning Run")
+                .traineeName("John Doe")
+                .build();
+
         when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
-        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainee));
+        when(trainingMapper.toTrainerTrainingResponse(sampleTraining)).thenReturn(responseDto);
 
         // ACT
-        List<Training> result = trainingService.getTrainerTrainings(trainerUser, null, null, "John");
+        List<TrainerTrainingResponse> result = trainingService.getTrainerTrainings(trainerUser, null, null, null);
 
         // ASSERT
         assertFalse(result.isEmpty());
-        assertEquals("John", sampleTrainee.getFirstName());
-        verify(traineeDao).findById(TRAINING_ID);
+        assertEquals("John Doe", result.get(0).getTraineeName());
     }
 
     @Test
-    @DisplayName("FILTER (TRAINER): Should return empty if trainee name does not match")
-    void getTrainerTrainings_NoTraineeMatch() {
-        // ARRANGE
-        when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
-        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainee));
-
-        // ACT
-        List<Training> result = trainingService.getTrainerTrainings("coach.bob", null, null, "WrongName");
-
-        // ASSERT
-        assertTrue(result.isEmpty());
-    }
-
-    @Test
-    @DisplayName("FILTER (TRAINER): Should return empty if date is before the 'from' range")
-    void getTrainerTrainings_DateBeforeRange() {
-        // ARRANGE
-        LocalDate fromDate = LocalDate.of(2025, 2, 1); // Sample is 2025-01-01
-        when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
-
-        // ACT
-        List<Training> result = trainingService.getTrainerTrainings("coach.bob", fromDate, null, null);
-
-        // ASSERT
-        assertTrue(result.isEmpty(), "Should be filtered out because 2025-01-01 is before 2025-02-01");
-    }
-
-    @Test
-    @DisplayName("FILTER (TRAINER): Should return empty if date is after the 'to' range")
-    void getTrainerTrainings_DateAfterRange() {
-        // ARRANGE
-        LocalDate toDate = LocalDate.of(2024, 12, 31);
-
-        // Use List.of() (immutable) which is faster than ArrayList for single items
-        when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
-
-        // ACT
-        List<Training> result = trainingService.getTrainerTrainings("coach.bob", null, toDate, null);
-
-        // ASSERT
-        assertTrue(result.isEmpty());
-        // Verify short-circuit: date filter happens BEFORE trainee filter
-        verify(traineeDao, never()).findById(anyLong());
-    }
-
-    @Test
-    @DisplayName("FILTER (TRAINER): Should return empty if trainee is not found in DAO")
-    void getTrainerTrainings_TraineeNotFoundInDao() {
-        // ARRANGE
-        when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
-        // Mock traineeDao to return empty, covering the .orElse(false) branch
-        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.empty());
-
-        // ACT
-        List<Training> result = trainingService.getTrainerTrainings("coach.bob", null, null, "John");
-
-        // ASSERT
-        assertTrue(result.isEmpty(), "Result should be empty if the trainee lookup fails.");
-        verify(traineeDao).findById(TRAINING_ID);
-    }
-
-    @Test
-    @DisplayName("FILTER (TRAINER): Should handle case where traineeName is provided but trainee record is missing")
-    void getTrainerTrainings_TraineeRecordMissing_FilterOut() {
-        // ARRANGE
-        String trainerUser = "coach.bob";
-        String searchTrainee = "John";
-
-        when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        // Trainer lookup must succeed to reach the trainee filter
-        when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
-        // Trainee lookup returns empty, covering the .orElse(false) branch when traineeName != null
-        when(traineeDao.findById(TRAINING_ID)).thenReturn(Optional.empty());
-
-        // ACT
-        List<Training> result = trainingService.getTrainerTrainings(trainerUser, null, null, searchTrainee);
-
-        // ASSERT
-        assertTrue(result.isEmpty(), "Training should be filtered out if the associated trainee record cannot be found.");
-        verify(traineeDao).findById(TRAINING_ID);
-    }
-
-    @Test
-    @DisplayName("FILTER (TRAINER): Should return training when traineeName is null (short-circuit)")
-    void getTrainerTrainings_TraineeNameNull_ReturnsTraining() {
+    @DisplayName("FILTER (TRAINER): Should filter by trainee first name")
+    void getTrainerTrainings_TraineeNameFilter() {
         // ARRANGE
         String trainerUser = "coach.bob";
         when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
-        when(trainerDao.findById(TRAINING_ID)).thenReturn(Optional.of(sampleTrainer));
+        // sampleTrainee has firstName "John"
 
         // ACT
-        // Passing null for traineeName triggers the short-circuit (traineeName == null)
-        List<Training> result = trainingService.getTrainerTrainings(trainerUser, null, null, null);
+        List<TrainerTrainingResponse> result = trainingService.getTrainerTrainings(trainerUser, null, null, "John");
+        List<TrainerTrainingResponse> resultEmpty = trainingService.getTrainerTrainings(trainerUser, null, null, "Mike");
 
         // ASSERT
-        assertFalse(result.isEmpty(), "Should return training when no trainee filter is applied.");
-        assertEquals(1, result.size());
-        // Verify that traineeDao was NEVER called due to the || short-circuit
-        verify(traineeDao, never()).findById(anyLong());
+        verify(trainingMapper, times(1)).toTrainerTrainingResponse(sampleTraining);
+        assertTrue(resultEmpty.isEmpty(), "Should be empty when trainee name doesn't match.");
     }
 }

@@ -1,5 +1,7 @@
 package com.gymcrm.controller;
 
+import com.gymcrm.dto.TraineeProfileResponse;
+import com.gymcrm.dto.TrainerProfileResponse;
 import com.gymcrm.dto.TrainingCreateRequest;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
@@ -31,28 +33,10 @@ public class TrainingController {
         this.trainerService = trainerService;
     }
 
-    @Operation(summary = "Add a new Training session")
+    @Operation(summary = "Add a new training session")
     @PostMapping
     public ResponseEntity<Void> addTraining(@Valid @RequestBody TrainingCreateRequest request) {
-        // 1. Resolve Trainee
-        Trainee trainee = traineeService.selectTraineeProfile(request.getTraineeUsername())
-                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(Trainee.class)));
-
-        // 2. Resolve Trainer
-        Trainer trainer = trainerService.selectProfile(request.getTrainerUsername())
-                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(Trainer.class)));
-
-        // 3. Map to Entity //
-        Training training = Training.builder()
-                .trainee(trainee)
-                .trainer(trainer)
-                .trainingName(request.getTrainingName())
-                .trainingDate(request.getTrainingDate())
-                .trainingDuration(request.getTrainingDuration())
-                .trainingType(trainer.getSpecialization()) // Inherit type from trainer's specialization
-                .build();
-
-        trainingService.createProfile(training);
+        trainingService.createProfile(request);
         return ResponseEntity.ok().build();
     }
 }

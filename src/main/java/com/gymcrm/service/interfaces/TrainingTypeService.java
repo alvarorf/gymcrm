@@ -5,6 +5,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TrainingTypeService {
-    List<TrainingType> getAllTrainingTypes();
-    Optional<TrainingType> findByName(String name);
+    List<TrainingType> getAllTrainingTypes(); // Maybe should return TrainingType request?
+    Optional<TrainingType> findByName(String name); // Maybe should return TrainingType request?
 }

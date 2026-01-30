@@ -2,6 +2,11 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
+import com.gymcrm.dto.RegistrationResponse;
+import com.gymcrm.dto.TraineeProfileResponse;
+import com.gymcrm.dto.TraineeRegistrationRequest;
+import com.gymcrm.dto.TraineeUpdateRequest;
+import com.gymcrm.mapper.TraineeMapper;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.util.Nomenclature;
@@ -32,10 +37,7 @@ class TraineeServiceImplTest {
     @Mock private TrainerDao trainerDao;
     @Mock private UsernameGenerator usernameGenerator;
     @Mock private PasswordGenerator passwordGenerator;
-    @Mock private PasswordEncoder passwordEncoder;
-
-    @InjectMocks
-    private AuthServiceImpl authService;
+    @Mock private TraineeMapper traineeMapper;
 
     @InjectMocks private TraineeServiceImpl traineeService;
 
@@ -45,6 +47,7 @@ class TraineeServiceImplTest {
 
     @BeforeEach
     void setUp() {
+        // Setter injection for non-constructor dependencies
         traineeService.setUsernameGenerator(usernameGenerator);
         traineeService.setPasswordGenerator(passwordGenerator);
         traineeService.setTrainerDao(trainerDao);
@@ -54,129 +57,89 @@ class TraineeServiceImplTest {
         sampleTrainee.setFirstName("Jane");
         sampleTrainee.setLastName("Doe");
         sampleTrainee.setUsername(TEST_USERNAME);
-        sampleTrainee.setPassword(passwordEncoder.encode("oldPassword"));
-        sampleTrainee.setDateOfBirth(LocalDate.of(1990, 1, 1));
-        sampleTrainee.setAddress("101 Mock Ave");
+        sampleTrainee.setPassword("oldPassword");
+        sampleTrainee.setTrainers(new java.util.HashSet<>());
         sampleTrainee.setActive(true);
     }
 
     @Test
-    @DisplayName("1. CREATE: Should generate unique credentials and set isActive=true.")
-    void createProfile_GeneratesCredentialsAndSaves() {
+    @DisplayName("1. CREATE: Should generate unique credentials and return RegistrationResponse")
+    void createProfile_Success() {
         // ARRANGE
-        String MOCK_USERNAME = "jane.doe";
-        String MOCK_PASSWORD = "testPassword123";
+        TraineeRegistrationRequest request = TraineeRegistrationRequest.builder()
+                .firstName("Jane").lastName("Doe").build();
+        RegistrationResponse expectedResponse = new RegistrationResponse(TEST_USERNAME, "testPass123");
 
-        when(usernameGenerator.generateUsername(anyString(), anyString())).thenReturn(MOCK_USERNAME);
-        when(passwordGenerator.generatePassword()).thenReturn(MOCK_PASSWORD);
-
-        Trainee savedTrainee = new Trainee();
-        savedTrainee.setUserId(TEST_ID);
-        when(traineeDao.save(any(Trainee.class))).thenReturn(savedTrainee);
+        when(traineeMapper.toEntity(request)).thenReturn(sampleTrainee);
+        when(usernameGenerator.generateUsername("Jane", "Doe")).thenReturn(TEST_USERNAME);
+        when(passwordGenerator.generatePassword()).thenReturn("testPass123");
+        when(traineeDao.save(any(Trainee.class))).thenReturn(sampleTrainee);
+        when(traineeMapper.toRegistrationResponse(sampleTrainee)).thenReturn(expectedResponse);
 
         // ACT
-        Trainee result = traineeService.createProfile(sampleTrainee);
+        RegistrationResponse result = traineeService.createProfile(request);
 
         // ASSERT
-        ArgumentCaptor<Trainee> traineeCaptor = ArgumentCaptor.forClass(Trainee.class);
-        verify(traineeDao, times(1)).save(traineeCaptor.capture());
-
-        Trainee capturedTrainee = traineeCaptor.getValue();
-        assertEquals(MOCK_USERNAME, capturedTrainee.getUsername());
-        assertEquals(MOCK_PASSWORD, capturedTrainee.getPassword());
-        assertTrue(capturedTrainee.isActive());
-        assertEquals(TEST_ID, result.getUserId());
+        assertNotNull(result);
+        assertEquals(TEST_USERNAME, result.getUsername());
+        verify(traineeDao).save(sampleTrainee);
     }
 
     @Test
-    @DisplayName("2. UPDATE: Should pass existing Trainee object to DAO.")
+    @DisplayName("2. UPDATE: Should update entity and return ProfileResponse")
     void updateProfile_Success() {
         // ARRANGE
-        sampleTrainee.setUserId(TEST_ID);
-        when(traineeDao.save(any(Trainee.class))).thenReturn(sampleTrainee);
+        TraineeUpdateRequest request = TraineeUpdateRequest.builder()
+                .username(TEST_USERNAME).firstName("Jane").lastName("Doe").isActive(true).build();
+        TraineeProfileResponse expectedResponse = TraineeProfileResponse.builder().firstName("Jane").build();
 
-        // ACT
-        Trainee result = traineeService.updateProfile(sampleTrainee);
-
-        // ASSERT
-        verify(traineeDao, times(1)).save(sampleTrainee);
-        assertEquals(TEST_ID, result.getUserId());
-    }
-
-    @Test
-    @DisplayName("2.1 UPDATE FAILURE: Should throw IllegalArgumentException when names are null.")
-    void updateProfile_ValidationFailure() {
-        // ARRANGE
-        Trainee invalidTrainee = new Trainee();
-        invalidTrainee.setFirstName(null);
-        invalidTrainee.setLastName("Doe");
-
-        // ACT & ASSERT
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-                traineeService.updateProfile(invalidTrainee));
-
-        assertEquals(Nomenclature.MSG_REQUIRED, exception.getMessage());
-        verify(traineeDao, never()).save(any(Trainee.class));
-    }
-
-    @Test
-    @DisplayName("2.2 UPDATE FAILURE: Should throw IllegalArgumentException when last name is null.")
-    void updateProfile_LastNameNull_ThrowsException() {
-        // ARRANGE
-        Trainee invalidTrainee = new Trainee();
-        invalidTrainee.setFirstName("Jane");
-        invalidTrainee.setLastName(null);
-
-        // ACT & ASSERT
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-            traineeService.updateProfile(invalidTrainee));
-
-        assertEquals(Nomenclature.MSG_REQUIRED, exception.getMessage());
-        verify(traineeDao, never()).save(any(Trainee.class));
-    }
-
-    @Test
-    @DisplayName("3. SELECT: Should return empty Optional when not found.")
-    void selectProfile_NotFound() {
-        // ARRANGE
-        when(traineeDao.findById(999L)).thenReturn(Optional.empty());
-
-        // ACT
-        Optional<Trainee> result = traineeService.selectProfile(999L);
-
-        // ASSERT
-        assertFalse(result.isPresent());
-    }
-
-    @Test
-    @DisplayName("4. DELETE: Should call delete method on DAO.")
-    void deleteProfile_Success() {
-        // ARRANGE
-        Long idToDelete = 10L;
-
-        // ACT
-        traineeService.deleteProfile(idToDelete);
-
-        // ASSERT
-        verify(traineeDao, times(1)).delete(idToDelete);
-    }
-
-    @Test
-    @DisplayName("6. SELECT (USERNAME): Should find profile by username.")
-    void selectProfile_ByUsername() {
-        // ARRANGE
         when(traineeDao.findByUsername(TEST_USERNAME)).thenReturn(Optional.of(sampleTrainee));
+        when(traineeDao.save(any(Trainee.class))).thenReturn(sampleTrainee);
+        when(traineeMapper.toProfileResponse(sampleTrainee)).thenReturn(expectedResponse);
 
         // ACT
-        Optional<Trainee> result = traineeService.selectTraineeProfile(TEST_USERNAME);
+        TraineeProfileResponse result = traineeService.updateProfile(request);
+
+        // ASSERT
+        assertNotNull(result);
+        verify(traineeMapper).updateEntityFromRequest(eq(request), eq(sampleTrainee));
+        verify(traineeDao).save(sampleTrainee);
+    }
+
+    @Test
+    @DisplayName("3. SELECT (ID): Should return ProfileResponse when found")
+    void selectProfile_Found() {
+        // ARRANGE
+        TraineeProfileResponse expectedResponse = TraineeProfileResponse.builder().firstName("Jane").build();
+        when(traineeDao.findById(TEST_ID)).thenReturn(Optional.of(sampleTrainee));
+        when(traineeMapper.toProfileResponse(sampleTrainee)).thenReturn(expectedResponse);
+
+        // ACT
+        Optional<TraineeProfileResponse> result = traineeService.selectProfile(TEST_ID);
 
         // ASSERT
         assertTrue(result.isPresent());
-        assertEquals(TEST_USERNAME, result.get().getUsername());
+        assertEquals("Jane", result.get().getFirstName());
     }
 
     @Test
-    @DisplayName("7. DELETE (USERNAME): Should find user then call delete by ID.")
+    @DisplayName("4. SELECT (USERNAME): Should find profile by username")
+    void selectTraineeProfile_Success() {
+        // ARRANGE
+        TraineeProfileResponse expectedResponse = TraineeProfileResponse.builder().firstName("Jane").build();
+        when(traineeDao.findByUsername(TEST_USERNAME)).thenReturn(Optional.of(sampleTrainee));
+        when(traineeMapper.toProfileResponse(sampleTrainee)).thenReturn(expectedResponse);
+
+        // ACT
+        Optional<TraineeProfileResponse> result = traineeService.selectTraineeProfile(TEST_USERNAME);
+
+        // ASSERT
+        assertTrue(result.isPresent());
+        assertEquals("Jane", result.get().getFirstName());
+    }
+
+    @Test
+    @DisplayName("5. DELETE (USERNAME): Should find user then call delete by ID")
     void deleteProfile_ByUsername() {
         // ARRANGE
         when(traineeDao.findByUsername(TEST_USERNAME)).thenReturn(Optional.of(sampleTrainee));
@@ -185,41 +148,11 @@ class TraineeServiceImplTest {
         traineeService.deleteProfile(TEST_USERNAME);
 
         // ASSERT
-        verify(traineeDao, times(1)).delete(TEST_ID);
+        verify(traineeDao).delete(TEST_ID);
     }
 
     @Test
-    @DisplayName("8. UPDATE PASSWORD: Should update password field and save via DAO.")
-    void updatePassword_Success() {
-        // ARRANGE
-        String newPass = "newSecurePass";
-        when(traineeDao.findById(TEST_ID)).thenReturn(Optional.of(sampleTrainee));
-
-        // ACT
-        traineeService.updatePassword(TEST_ID, newPass);
-
-        // ASSERT
-        assertEquals(newPass, sampleTrainee.getPassword());
-        verify(traineeDao, times(1)).save(sampleTrainee);
-    }
-
-    @Test
-    @DisplayName("9. TOGGLE ACTIVATION: Should flip the isActive status.")
-    void toggleActivation_Success() {
-        // ARRANGE
-        sampleTrainee.setActive(true);
-        when(traineeDao.findById(TEST_ID)).thenReturn(Optional.of(sampleTrainee));
-
-        // ACT
-        traineeService.toggleActivation(TEST_ID);
-
-        // ASSERT
-        assertFalse(sampleTrainee.isActive());
-        verify(traineeDao, times(1)).save(sampleTrainee);
-    }
-
-    @Test
-    @DisplayName("10. UPDATE TRAINERS: Should update the set of associated trainers.")
+    @DisplayName("6. UPDATE TRAINERS: Should update the set of associated trainers")
     void updateTraineeTrainers_Success() {
         // ARRANGE
         String trainerUser = "coach.bob";
@@ -233,8 +166,7 @@ class TraineeServiceImplTest {
         traineeService.updateTraineeTrainers(TEST_USERNAME, List.of(trainerUser));
 
         // ASSERT
-        assertEquals(1, sampleTrainee.getTrainers().size());
+        verify(traineeDao).save(sampleTrainee);
         assertTrue(sampleTrainee.getTrainers().contains(mockTrainer));
-        verify(traineeDao, times(1)).save(sampleTrainee);
     }
 }

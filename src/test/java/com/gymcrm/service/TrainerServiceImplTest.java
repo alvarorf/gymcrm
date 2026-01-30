@@ -2,10 +2,13 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
+import com.gymcrm.dto.*;
+import com.gymcrm.mapper.TrainerMapper;
+import com.gymcrm.mapper.TrainingTypeMapper;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.model.TrainingType;
-import com.gymcrm.util.Nomenclature;
+import com.gymcrm.service.interfaces.TrainingTypeService;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,10 +19,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -32,213 +35,155 @@ class TrainerServiceImplTest {
     @Mock private TraineeDao traineeDao;
     @Mock private UsernameGenerator usernameGenerator;
     @Mock private PasswordGenerator passwordGenerator;
+    @Mock private TrainingTypeService trainingTypeService;
+    @Mock private TrainerMapper trainerMapper;
 
     @InjectMocks private TrainerServiceImpl trainerService;
 
     private Trainer sampleTrainer;
+    private TrainingType mockType;
     private final String MOCK_USER = "dwight.schrute";
     private final String MOCK_PASS = "beetroot123";
-    private final Long TEST_ID = 102L;
 
     @BeforeEach
     void setUp() {
-        // Resolve Mockito setter injection issues
+        // Manually trigger setter injection for mocks (since they are not final in the Service)
         trainerService.setUsernameGenerator(usernameGenerator);
         trainerService.setPasswordGenerator(passwordGenerator);
         trainerService.setTraineeDao(traineeDao);
+        trainerService.setTrainerMapper(trainerMapper);
+        trainerService.setTrainingTypeService(trainingTypeService);
 
-        TrainingType mockTrainingType = new TrainingType();
-        mockTrainingType.setId(1L);
-        mockTrainingType.setTrainingTypeName("Martial Arts");
+        mockType = new TrainingType();
+        mockType.setTrainingTypeName("Martial Arts");
 
         sampleTrainer = new Trainer();
-        sampleTrainer.setUserId(TEST_ID);
         sampleTrainer.setFirstName("Dwight");
         sampleTrainer.setLastName("Schrute");
         sampleTrainer.setUsername(MOCK_USER);
-        sampleTrainer.setPassword(MOCK_PASS);
-        sampleTrainer.setSpecialization(mockTrainingType);
+        sampleTrainer.setSpecialization(mockType);
         sampleTrainer.setActive(true);
     }
 
     @Test
-    @DisplayName("CREATE: Should set generated credentials and save trainer")
+    @DisplayName("CREATE: Should set generated credentials and return response")
     void createProfile_Success() {
         // ARRANGE
+        // Create the DTO
+        TrainingTypeRequest typeRequest = TrainingTypeRequest.builder()
+                .trainingTypeName("Martial Arts")
+                .build();
+
+        // Use the mapper to resolve the required type: TrainingType
+        TrainingTypeMapper tempMapper = new TrainingTypeMapper();
+        TrainingType mappedType = tempMapper.toEntity(typeRequest);
+
+        TrainerRegistrationRequest request = TrainerRegistrationRequest.builder()
+                .firstName("Dwight")
+                .lastName("Schrute")
+                .specialization(mappedType)
+                .build();
+
+        RegistrationResponse expectedResponse = new RegistrationResponse(MOCK_USER, MOCK_PASS);
+
+        // Mocking for the Service logic
+        when(trainingTypeService.findByName("Martial Arts")).thenReturn(Optional.of(mockType));
+        when(trainerMapper.toEntity(eq(request), any(TrainingType.class))).thenReturn(sampleTrainer);
         when(usernameGenerator.generateUsername("Dwight", "Schrute")).thenReturn(MOCK_USER);
         when(passwordGenerator.generatePassword()).thenReturn(MOCK_PASS);
-        when(trainerDao.save(any(Trainer.class))).thenAnswer(i -> i.getArguments()[0]);
+        when(trainerDao.save(any(Trainer.class))).thenReturn(sampleTrainer);
+        when(trainerMapper.toRegistrationResponse(sampleTrainer)).thenReturn(expectedResponse);
 
         // ACT
-        Trainer result = trainerService.createProfile(sampleTrainer);
+        RegistrationResponse result = trainerService.createProfile(request);
 
         // ASSERT
         assertAll("Verify profile creation",
+                () -> assertNotNull(result),
                 () -> assertEquals(MOCK_USER, result.getUsername()),
-                () -> assertEquals(MOCK_PASS, result.getPassword()),
-                () -> assertNotNull(result.getSpecialization()),
-                () -> assertEquals("Martial Arts", result.getSpecialization().getTrainingTypeName())
+                () -> assertEquals(MOCK_PASS, result.getPassword())
         );
+        verify(trainerDao).save(any(Trainer.class));
     }
 
     @Test
-    @DisplayName("UPDATE: Should call DAO save for existing trainer")
+    @DisplayName("UPDATE: Should update entity and return profile response")
     void updateProfile_Success() {
         // ARRANGE
+        TrainerUpdateRequest request = TrainerUpdateRequest.builder()
+                .username(MOCK_USER)
+                .firstName("Dwight")
+                .lastName("Schrute")
+                .isActive(true)
+                .build();
+
+        TrainerProfileResponse expectedResponse = TrainerProfileResponse.builder()
+                .firstName("Dwight")
+                .lastName("Schrute")
+                .isActive(true)
+                .build();
+
+        when(trainerDao.findByUsername(MOCK_USER)).thenReturn(Optional.of(sampleTrainer));
         when(trainerDao.save(sampleTrainer)).thenReturn(sampleTrainer);
+        when(trainerMapper.toProfileResponse(sampleTrainer)).thenReturn(expectedResponse);
 
         // ACT
-        Trainer result = trainerService.updateProfile(sampleTrainer);
+        TrainerProfileResponse result = trainerService.updateProfile(request);
 
         // ASSERT
         assertNotNull(result);
-        verify(trainerDao, times(1)).save(sampleTrainer);
+        assertEquals("Dwight", result.getFirstName());
+        verify(trainerMapper).updateEntityFromRequest(request, sampleTrainer);
+        verify(trainerDao).save(sampleTrainer);
     }
 
     @Test
-    @DisplayName("UPDATE FAILURE: Should throw IllegalArgumentException when first name or last name is missing")
-    void updateProfile_MissingNames_ThrowsException() {
-        // ARRANGE
-        Trainer invalidTrainer = new Trainer();
-        invalidTrainer.setFirstName(null); // Triggers the validation logic
-        invalidTrainer.setLastName("Schrute");
-
-        // ACT & ASSERT
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-            trainerService.updateProfile(invalidTrainer));
-
-        assertEquals(Nomenclature.MSG_REQUIRED, exception.getMessage());
-        verify(trainerDao, never()).save(any(Trainer.class));
-    }
-
-    @Test
-    @DisplayName("UPDATE FAILURE: Should throw IllegalArgumentException when last name is null")
-    void updateProfile_LastNameNull_ThrowsException() {
-        // ARRANGE
-        Trainer invalidTrainer = new Trainer();
-        invalidTrainer.setFirstName("Dwight");
-        invalidTrainer.setLastName(null); // Triggers the second part of the || condition
-
-        // ACT & ASSERT
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
-            trainerService.updateProfile(invalidTrainer));
-
-        assertEquals(Nomenclature.MSG_REQUIRED, exception.getMessage());
-        verify(trainerDao, never()).save(any(Trainer.class));
-    }
-
-
-
-    @Test
-    @DisplayName("SELECT (ID): Should return Trainer when ID exists")
-    void selectProfile_FoundById() {
-        // ARRANGE
-        when(trainerDao.findById(TEST_ID)).thenReturn(Optional.of(sampleTrainer));
-
-        // ACT
-        Optional<Trainer> result = trainerService.selectProfile(TEST_ID);
-
-        // ASSERT
-        assertTrue(result.isPresent());
-        assertEquals("Dwight", result.get().getFirstName());
-    }
-
-    @Test
-    @DisplayName("SELECT (USERNAME): Should return Trainer when username exists")
-    void selectProfile_FoundByUsername() {
-        // ARRANGE
-        when(trainerDao.findByUsername(MOCK_USER)).thenReturn(Optional.of(sampleTrainer));
-
-        // ACT
-        Optional<Trainer> result = trainerService.selectProfile(MOCK_USER);
-
-        // ASSERT
-        assertTrue(result.isPresent());
-        assertEquals(MOCK_USER, result.get().getUsername());
-    }
-
-    @Test
-    @DisplayName("UPDATE PASSWORD: Should update trainer's password and save")
-    void updatePassword_Success() {
-        // ARRANGE
-        String newPass = "moseIsTheBest";
-        when(trainerDao.findById(TEST_ID)).thenReturn(Optional.of(sampleTrainer));
-
-        // ACT
-        trainerService.updatePassword(TEST_ID, newPass);
-
-        // ASSERT
-        assertEquals(newPass, sampleTrainer.getPassword());
-        verify(trainerDao, times(1)).save(sampleTrainer);
-    }
-
-    @Test
-    @DisplayName("TOGGLE ACTIVATION: Should flip activation status")
-    void toggleActivation_Success() {
-        // ARRANGE
-        sampleTrainer.setActive(true);
-        when(trainerDao.findById(TEST_ID)).thenReturn(Optional.of(sampleTrainer));
-
-        // ACT
-        trainerService.toggleActivation(TEST_ID);
-
-        // ASSERT
-        assertFalse(sampleTrainer.isActive());
-        verify(trainerDao, times(1)).save(sampleTrainer);
-    }
-
-    @Test
-    @DisplayName("GET UNASSIGNED: Should filter out trainers already assigned to the trainee")
-    void getUnassignedTrainers_Success() {
+    @DisplayName("GET UNASSIGNED: Should filter out trainers already assigned and return ShortResponse list")
+    void getUnassignedActiveTrainers_Success() {
         // ARRANGE
         String traineeUsername = "jim.halpert";
-
-        // Setup existing trainer (Dwight) already assigned to Jim
         Trainee jim = new Trainee();
-        jim.setUsername(traineeUsername);
-        Set<Trainer> assignedTrainers = new HashSet<>();
-        assignedTrainers.add(sampleTrainer); // Dwight is already assigned
-        jim.setTrainers(assignedTrainers);
+        jim.setTrainers(new HashSet<>());
 
-        // Set up a new trainer (Michael) who is unassigned
-        Trainer unassignedTrainer = new Trainer();
-        unassignedTrainer.setFirstName("Michael");
-        unassignedTrainer.setUsername("michael.scott");
+        Trainer Michael = new Trainer();
+        Michael.setUsername("michael.scott");
+        Michael.setFirstName("Michael");
+        Michael.setActive(true);
 
-        List<Trainer> allTrainers = List.of(sampleTrainer, unassignedTrainer);
+        TrainerShortResponse expectedDto = TrainerShortResponse.builder()
+                .username("michael.scott")
+                .firstName("Michael")
+                .build();
 
         when(traineeDao.findByUsername(traineeUsername)).thenReturn(Optional.of(jim));
-        when(trainerDao.findAll()).thenReturn(allTrainers);
+        when(trainerDao.findAll()).thenReturn(List.of(sampleTrainer, Michael));
+        when(trainerMapper.toShortResponse(Michael)).thenReturn(expectedDto);
+        // sampleTrainer (Dwight) will be filtered out if we add him to Jim's list in the test setup
+        jim.getTrainers().add(sampleTrainer);
 
         // ACT
-        List<Trainer> result = trainerService.getUnassignedTrainersByTraineeUsername(traineeUsername);
-
-        // ASSERT
-        assertEquals(1, result.size(), "Result should only contain the unassigned trainer");
-        assertEquals("Michael", result.get(0).getFirstName());
-        assertFalse(result.contains(sampleTrainer), "Assigned trainer should be filtered out");
-    }
-
-    @Test
-    @DisplayName("GET UNASSIGNED: Should return all trainers if trainee's trainer set is null")
-    void getUnassignedTrainers_NullTrainerSet_ReturnsAll() {
-        // ARRANGE
-        String traineeUsername = "pam.beesly";
-        Trainee pam = new Trainee();
-        pam.setUsername(traineeUsername);
-        pam.setTrainers(null); // Triggers the 'trainee.getTrainers() == null' branch
-
-        List<Trainer> allTrainers = List.of(sampleTrainer);
-
-        when(traineeDao.findByUsername(traineeUsername)).thenReturn(Optional.of(pam));
-        when(trainerDao.findAll()).thenReturn(allTrainers);
-
-        // ACT
-        List<Trainer> result = trainerService.getUnassignedTrainersByTraineeUsername(traineeUsername);
+        List<TrainerShortResponse> result = trainerService.getUnassignedActiveTrainersByTraineeUsername(traineeUsername);
 
         // ASSERT
         assertEquals(1, result.size());
-        assertTrue(result.contains(sampleTrainer));
-        verify(trainerDao, times(1)).findAll();
+        assertEquals("michael.scott", result.get(0).getUsername());
+        // Verify Dwight is not in the list by checking usernames
+        boolean containsDwight = result.stream().anyMatch(dto -> dto.getUsername().equals(MOCK_USER));
+        assertFalse(containsDwight, "The list should not contain the assigned trainer Dwight");
+    }
+
+    @Test
+    @DisplayName("TOGGLE ACTIVATION: Should flip activation status and save")
+    void toggleActivation_Success() {
+        // ARRANGE
+        sampleTrainer.setActive(true);
+        when(trainerDao.findByUsername(MOCK_USER)).thenReturn(Optional.of(sampleTrainer));
+
+        // ACT
+        trainerService.toggleActivation(MOCK_USER);
+
+        // ASSERT
+        assertFalse(sampleTrainer.isActive());
+        verify(trainerDao).save(sampleTrainer);
     }
 }

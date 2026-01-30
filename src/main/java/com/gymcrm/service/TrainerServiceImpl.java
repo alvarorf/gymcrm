@@ -2,12 +2,16 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
+import com.gymcrm.dto.*;
+import com.gymcrm.mapper.TrainerMapper;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
+import com.gymcrm.model.TrainingType;
 import com.gymcrm.service.interfaces.TrainerService;
+import com.gymcrm.service.interfaces.TrainingTypeService;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.Setter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import com.gymcrm.util.Nomenclature;
@@ -19,6 +23,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service  // Could also be @Component
 public class TrainerServiceImpl implements TrainerService {
@@ -29,89 +34,72 @@ public class TrainerServiceImpl implements TrainerService {
     // Dependency injected via constructor (because, by req4:
     // "DAO with storage bean should be inserted into services beans using auto wiring")
     private final TrainerDao trainerDao;
+    private final TrainerMapper trainerMapper;
 
     // Non-Core Dependencies. Must NOT be final, for injection via Setter
-    private UsernameGenerator usernameGenerator;
-    private PasswordGenerator passwordGenerator;
-    private TraineeDao traineeDao;
+    @Setter private UsernameGenerator usernameGenerator;
+    @Setter private PasswordGenerator passwordGenerator;
+    @Setter private TraineeDao traineeDao;
+    @Setter private TrainingTypeService trainingTypeService;
 
-    // Constructor-based injection, we only inject TrainerDao because it is a core dependency
-
-    public TrainerServiceImpl(TrainerDao trainerDao)
+    // Constructor-based injection, we only inject core dependencies
+    public TrainerServiceImpl(TrainerDao trainerDao, TrainerMapper trainerMapper)
     {
         this.trainerDao = trainerDao;
+        this.trainerMapper = trainerMapper;
         Nomenclature.info(logger, Action.INITIALIZE);
     }
 
-    @Autowired
-    public void setUsernameGenerator(UsernameGenerator usernameGenerator) {
-        this.usernameGenerator = usernameGenerator;
-    }
-
-    @Autowired
-    public void setPasswordGenerator(PasswordGenerator passwordGenerator) {
-        this.passwordGenerator = passwordGenerator;
-    }
-
-    @Autowired
-    public void setTraineeDao(TraineeDao traineeDao) { this.traineeDao = traineeDao; }
-
     @Override
-    public Trainer createProfile(Trainer trainer)
+    @Transactional
+    public RegistrationResponse createProfile(TrainerRegistrationRequest request)
     {
-        Nomenclature.info(logger, Action.CREATE, trainer.getFirstName() + " " + trainer.getLastName());
-        String username = usernameGenerator.generateUsername(trainer.getFirstName(), trainer.getLastName());
-        String password = passwordGenerator.generatePassword();
+        // Business logic: find specialization
+        TrainingType specialization = trainingTypeService.findByName(request.getSpecialization().getTrainingTypeName())
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(request.getSpecialization().getTrainingTypeName())));
 
-        trainer.setUsername(username);
-        trainer.setPassword(password);
+        // Mapping
+        Trainer trainer = trainerMapper.toEntity(request, specialization);
+        trainer.setUsername(usernameGenerator.generateUsername(trainer.getFirstName(), trainer.getLastName()));
+        trainer.setPassword(passwordGenerator.generatePassword());
 
-        Trainer savedTrainer = trainerDao.save(trainer);
-        Nomenclature.success(logger, Action.CREATE, savedTrainer.getUsername());
-        return savedTrainer;
-    }
+        Trainer saved = trainerDao.save(trainer);
+        Nomenclature.success(logger, Action.CREATE, saved.getUsername());
 
-    // For 17. We need to find trainers who are not currently associated with a specific trainee
-    @Override
-    @PreAuthorize("isAuthenticated()")
-    public List<Trainer> getUnassignedTrainersByTraineeUsername(String traineeUsername) {
-        Trainee trainee = traineeDao.findByUsername(traineeUsername)
-                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(Trainee.class)));
-
-        List<Trainer> allTrainers = trainerDao.findAll();
-
-        // Filter out trainers already in the trainee's list
-        return allTrainers.stream()
-                .filter(trainer -> trainee.getTrainers() == null || !trainee.getTrainers().contains(trainer))
-                .collect(Collectors.toList());
+        return trainerMapper.toRegistrationResponse(saved);
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public Trainer updateProfile(Trainer trainer)
-    {
-        Nomenclature.info(logger, Action.UPDATE, trainer.getUserId());
-        // Notes (3): Required field validation
-        if (trainer.getFirstName() == null || trainer.getLastName() == null) {
-            throw new IllegalArgumentException(Nomenclature.MSG_REQUIRED);
-        }
-        return trainerDao.save(trainer);
+    @Transactional
+    public TrainerProfileResponse updateProfile(TrainerUpdateRequest request) {
+        Nomenclature.info(logger, Action.UPDATE, request.getUsername());
+
+        Trainer existing = trainerDao.findByUsername(request.getUsername())
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(request.getUsername())));
+
+        trainerMapper.updateEntityFromRequest(request, existing);
+        Trainer updated = trainerDao.save(existing);
+
+        return trainerMapper.toProfileResponse(updated);
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public Optional<Trainer> selectProfile(Long id)
+    public Optional<TrainerProfileResponse> selectTrainerProfile(Long id)
     {
         Nomenclature.info(logger, Action.FETCH, id);
-        return trainerDao.findById(id);
+        return trainerDao.findById(id)
+                .map(trainerMapper::toProfileResponse); //  TODO: Fix the NullPointerException thrown here
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public Optional<Trainer> selectProfile(String username) {
+    public Optional<TrainerProfileResponse> selectTrainerProfile(String username) {
 
         Nomenclature.info(logger, Action.FETCH, username);
-        return trainerDao.findByUsername(username);
+        return trainerDao.findByUsername(username)
+                .map(trainerMapper::toProfileResponse);
     }
 
     @Override
@@ -130,7 +118,6 @@ public class TrainerServiceImpl implements TrainerService {
         trainerDao.findById(id).ifPresent(trainer -> {
             trainer.setActive(!trainer.isActive());
             trainerDao.save(trainer);
-            // Prints: [toggleActivation] Attempting to change status to ACTIVE Trainer
             Nomenclature.info(logger, Action.TOGGLE, trainer.isActive());
         });
     }
@@ -143,5 +130,19 @@ public class TrainerServiceImpl implements TrainerService {
             trainerDao.save(trainer);
             Nomenclature.info(logger, Action.TOGGLE);
         });
+    }
+
+    @Override
+    @PreAuthorize("isAuthenticated()")
+    public List<TrainerShortResponse> getUnassignedActiveTrainersByTraineeUsername(String traineeUsername) {
+        Trainee trainee = traineeDao.findByUsername(traineeUsername)
+                .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(traineeUsername)));
+
+        // Fetch all trainers, filter for Active AND Not in Trainee's current list
+        return trainerDao.findAll().stream()
+                .filter(Trainer::isActive) // Requirement 10: "active trainers"
+                .filter(trainer -> trainee.getTrainers() == null || !trainee.getTrainers().contains(trainer))
+                .map(trainerMapper::toShortResponse)
+                .collect(Collectors.toList());
     }
 }
