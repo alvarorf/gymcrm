@@ -1,17 +1,12 @@
 package com.gymcrm.service;
 
-import com.gymcrm.dao.interfaces.TraineeDao;
-import com.gymcrm.dao.interfaces.TrainerDao;
+import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.service.interfaces.AuthService;
 import com.gymcrm.util.Nomenclature;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.slf4j.*;
+import org.springframework.security.core.userdetails.*;
+import org.springframework.security.authentication.*;
 import org.springframework.stereotype.Service;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
 
 @Service

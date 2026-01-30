@@ -10,7 +10,6 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -28,7 +27,7 @@ public class StorageInitializationPostProcessor implements BeanPostProcessor
     private final DataLoader dataLoader;
 
     @Autowired
-    public StorageInitializationPostProcessor(@Lazy DataLoader dataLoader) {
+    public StorageInitializationPostProcessor(DataLoader dataLoader) {
         this.dataLoader = dataLoader;
     }
 
@@ -40,10 +39,8 @@ public class StorageInitializationPostProcessor implements BeanPostProcessor
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         // Intercept the EntityManagerFactory to trigger DB seeding (after the EntityManager is ready)
         if (bean instanceof EntityManagerFactory) {
-            // Output: [postProcessBeforeInitialization] Attempting to seed database with initial data StorageInitialization
             Nomenclature.info(logger, Action.SEED);
             dataLoader.loadInitialData(dataPath);
-            // Output: [postProcessBeforeInitialization] Successfully seed database with initial data StorageInitialization (Global Load)
             Nomenclature.success(logger, Action.SEED, "Global Load");
         }
 

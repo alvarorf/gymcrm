@@ -1,14 +1,9 @@
 package com.gymcrm.facade;
 
-import com.gymcrm.service.interfaces.AuthService;
-import com.gymcrm.service.interfaces.TraineeService;
-import com.gymcrm.service.interfaces.TrainerService;
-import com.gymcrm.service.interfaces.TrainingService;
+import com.gymcrm.service.interfaces.*;
 import lombok.Getter;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
-
-import java.util.Collections;
 
 /**
  * Facade class to manage service access and authentication.

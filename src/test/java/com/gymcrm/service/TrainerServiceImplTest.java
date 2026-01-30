@@ -1,28 +1,17 @@
 package com.gymcrm.service;
 
-import com.gymcrm.dao.interfaces.TraineeDao;
-import com.gymcrm.dao.interfaces.TrainerDao;
+import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.dto.*;
-import com.gymcrm.mapper.TrainerMapper;
-import com.gymcrm.mapper.TrainingTypeMapper;
-import com.gymcrm.model.Trainee;
-import com.gymcrm.model.Trainer;
-import com.gymcrm.model.TrainingType;
+import com.gymcrm.mapper.*;
+import com.gymcrm.model.*;
 import com.gymcrm.service.interfaces.TrainingTypeService;
-import com.gymcrm.util.UsernameGenerator;
-import com.gymcrm.util.PasswordGenerator;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import com.gymcrm.util.*;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -51,7 +40,11 @@ class TrainerServiceImplTest {
         trainerService.setUsernameGenerator(usernameGenerator);
         trainerService.setPasswordGenerator(passwordGenerator);
         trainerService.setTraineeDao(traineeDao);
-        trainerService.setTrainerMapper(trainerMapper);
+
+        // TODO: Fix error here: java: cannot find symbol
+        // symbol:   method setTrainerMapper(com.gymcrm.mapper.TrainerMapper)
+        //        location: variable trainerService of type com.gymcrm.service.TrainerServiceImpl
+        // TODO: Also, we get the error Cannot resolve method 'setTrainerMapper' in 'TrainerServiceImpl'
         trainerService.setTrainingTypeService(trainingTypeService);
 
         mockType = new TrainingType();

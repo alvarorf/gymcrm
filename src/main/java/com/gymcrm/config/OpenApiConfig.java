@@ -18,7 +18,7 @@ public class OpenApiConfig {
                 .info(new Info()
                         .title("Gym CRM API")
                         .version("1.0")
-                        .description("Spring 7 / Jakarta EE 11"))
+                        .description("Spring 6 / Jakarta EE 11"))
                 .components(new Components()
                         .addSecuritySchemes("basicAuth",
                                 new SecurityScheme()
