@@ -41,13 +41,13 @@ public class AuthController {
             UserDetails user = authService.authenticate(username, password);
 
             if (user != null) {
-                return ResponseEntity.ok("Login successful"); // TODO: Use (update if necessary) Nomenclature class
+                return ResponseEntity.ok(Nomenclature.MSG_LOGIN_SUCCESS);
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials"); // TODO: Use (update if necessary) Nomenclature class
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Nomenclature.MSG_INVALID_CREDENTIALS);
             }
         } catch (Exception e) {
             // Handle specific authentication exceptions
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Authentication failed: " + e.getMessage()); // TODO: Use (update if necessary) Nomenclature class
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Nomenclature.MSG_AUTH_FAILED + e.getMessage());
         }
     }
 
@@ -60,12 +60,12 @@ public class AuthController {
                     request.getOldPassword(),
                     request.getNewPassword()
             );
-            return ResponseEntity.ok("Password changed successfully"); // TODO: Use (update if necessary) Nomenclature class
+            return ResponseEntity.ok(Nomenclature.MSG_PASSWORD_CHANGED);
         } catch (Exception e) {
             // This will catch UsernameNotFoundException or BadCredentialsException
             Nomenclature.warn(logger, Nomenclature.Action.UPDATE_SENSITIVE, request.getUsername());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body("Failed to change password: " + e.getMessage()); // TODO: Use (update if necessary) Nomenclature class
+                    .body(Nomenclature.MSG_PASSWORD_CHANGE_FAILED + e.getMessage());
         }
     }
 }

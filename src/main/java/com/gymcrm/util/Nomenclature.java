@@ -36,9 +36,15 @@ public final class Nomenclature {
         };
     }
 
-    // --- Validation and server error messages ---
-    public static final String MSG_REQUIRED = "First Name and Last Name are required.";
+    // --- Validation, response and server error messages ---
+    public static final String MSG_REQUIRED = "First Name and last name are required.";
     public static final String MSG_INTERNAL_ERROR = "An unexpected error occurred. Please try again later.";
+    public static final String MSG_LOGIN_SUCCESS = "Login successful";
+    public static final String MSG_INVALID_CREDENTIALS = "Invalid credentials";
+    public static final String MSG_AUTH_FAILED = "Authentication failed: ";
+    public static final String MSG_AUTH_REQUIRED = "Username and password are required.";
+    public static final String MSG_PASSWORD_CHANGED = "Password changed successfully";
+    public static final String MSG_PASSWORD_CHANGE_FAILED = "Failed to change password: ";
 
     // It can handle optional context (IDs, Usernames, Booleans)
     public static void info(Logger logger, Action action, Object... context) {
