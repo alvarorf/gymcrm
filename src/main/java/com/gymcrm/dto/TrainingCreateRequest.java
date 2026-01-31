@@ -1,5 +1,6 @@
 package com.gymcrm.dto;
 
+import com.gymcrm.util.Nomenclature;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -13,18 +14,18 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TrainingCreateRequest {
-    @NotBlank(message = "Trainee username is required")
+    @NotBlank(message = Nomenclature.REQD.TRAINEE_USERNAME)
     private String traineeUsername;
 
-    @NotBlank(message = "Trainer username is required")
+    @NotBlank(message = Nomenclature.REQD.TRAINER_USERNAME)
     private String trainerUsername;
 
-    @NotBlank(message = "Training Name is required")
+    @NotBlank(message = Nomenclature.REQD.TRAINING_NAME)
     private String trainingName;
 
-    @NotNull(message = "Training Date is required")
+    @NotNull(message = Nomenclature.REQD.TRAINING_NAME)
     private LocalDate trainingDate;
 
-    @NotNull(message = "Training Duration is required")
+    @NotNull(message = Nomenclature.REQD.TRAINING_DURATION)
     private Integer trainingDuration;
 }

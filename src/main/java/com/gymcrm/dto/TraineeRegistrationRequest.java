@@ -1,10 +1,8 @@
 package com.gymcrm.dto;
 
+import com.gymcrm.util.Nomenclature;
 import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import java.time.LocalDate;
 
 @Data // Generates getters, setters, equals, hashCode, and toString
@@ -12,10 +10,10 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TraineeRegistrationRequest {
-    @NotBlank(message = "First Name is required") // Requirement 1.a.I
+    @NotBlank(message = Nomenclature.REQD.FIRST_NAME) // Requirement 1.a.I
     private String firstName;
 
-    @NotBlank(message = "Last Name is required") // Requirement 1.a.II
+    @NotBlank(message = Nomenclature.REQD.LAST_NAME) // Requirement 1.a.II
     private String lastName;
 
     // Optional

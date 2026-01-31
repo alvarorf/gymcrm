@@ -1,16 +1,17 @@
 package com.gymcrm.dto;
 
+import com.gymcrm.util.Nomenclature;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
 public class PasswordChangeRequest {
-    @NotBlank(message = "Username is required")
+    @NotBlank(message = Nomenclature.REQD.USERNAME)
     private String username;
 
-    @NotBlank(message = "Old password is required")
+    @NotBlank(message = Nomenclature.REQD.OLD_PASSWORD)
     private String oldPassword;
 
-    @NotBlank(message = "New password is required")
+    @NotBlank(message = Nomenclature.REQD.NEW_PASSWORD)
     private String newPassword;
 }

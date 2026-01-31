@@ -1,4 +1,3 @@
 package com.gymcrm.dto;
 
-public class GeneratedCredentialsResponse {
-}
+public record GeneratedCredentialsResponse(String username, String rawPassword, String encodedPassword) {}

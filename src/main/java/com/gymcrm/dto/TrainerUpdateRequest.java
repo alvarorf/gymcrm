@@ -1,6 +1,7 @@
 package com.gymcrm.dto;
 
 import com.gymcrm.model.TrainingType;
+import com.gymcrm.util.Nomenclature;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -10,17 +11,17 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class TrainerUpdateRequest {
-    @NotBlank(message = "Username is required")
+    @NotBlank(message = Nomenclature.REQD.USERNAME)
     private String username;
 
-    @NotBlank(message = "First Name is required")
+    @NotBlank(message = Nomenclature.REQD.FIRST_NAME)
     private String firstName;
 
-    @NotBlank(message = "Last Name is required")
+    @NotBlank(message = Nomenclature.REQD.LAST_NAME)
     private String lastName;
 
     private TrainingType specialization;
 
-    @NotNull(message = "Is Active status is required")
+    @NotNull(message = Nomenclature.REQD.IS_ACTIVE)
     private Boolean isActive;
 }
