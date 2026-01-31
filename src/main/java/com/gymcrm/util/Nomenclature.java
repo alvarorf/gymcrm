@@ -36,15 +36,41 @@ public final class Nomenclature {
         };
     }
 
+    /**
+     * Centralized Validation Messages
+     * These must be 'public static final String' to be used in Annotations.
+     */
+    public static final class REQD {
+        public static final String FIRST_NAME = "First Name is required";
+        public static final String LAST_NAME = "Last Name is required";
+        public static final String USERNAME = "Username is required";
+        public static final String TRAINEE_USERNAME = "Trainee username is required";
+        public static final String TRAINER_USERNAME = "Trainer username is required";
+        public static final String PASSWORD = "Password is required";
+        public static final String OLD_PASSWORD = "Old password is required";
+        public static final String NEW_PASSWORD = "New password is required";
+        public static final String IS_ACTIVE = "Activation status is required";
+        public static final String SPECIALIZATION = "Specialization is required";
+        public static final String TRAINING_TYPE = "Training Type name is required";
+        public static final String TRAINING_NAME = "Training Name is required";
+        public static final String TRAINING_DATE = "Training Date is required";
+        public static final String TRAINING_DURATION = "Training Duration is required";
+    }
+
     // --- Validation, response and server error messages ---
-    public static final String MSG_REQUIRED = "First Name and last name are required.";
-    public static final String MSG_INTERNAL_ERROR = "An unexpected error occurred. Please try again later.";
     public static final String MSG_LOGIN_SUCCESS = "Login successful";
     public static final String MSG_INVALID_CREDENTIALS = "Invalid credentials";
     public static final String MSG_AUTH_FAILED = "Authentication failed: ";
     public static final String MSG_AUTH_REQUIRED = "Username and password are required.";
     public static final String MSG_PASSWORD_CHANGED = "Password changed successfully";
-    public static final String MSG_PASSWORD_CHANGE_FAILED = "Failed to change password: ";
+    public static final String MSG_PASSWORD_CHANGE_FAILED = "Password change failed with errors";
+
+
+    // --- Dictionary and Error Messages ---
+    public static final String MSG_INTERNAL_ERROR = "An unexpected error occurred. . Please try again later.";
+    public static final String MSG_NOT_FOUND = "Record not found for: ";
+
+
 
     // It can handle optional context (IDs, Usernames, Booleans)
     public static void info(Logger logger, Action action, Object... context) {
@@ -94,8 +120,6 @@ public final class Nomenclature {
         return clazz.getSimpleName() + " not found";
     }
 
-    // Returns a standard error message for a specific identifier.
-    public static String getNotFoundMsg(String identifier) {
-        return "Record not found for: " + identifier;
-    }
+    public static String getNotFoundMsg(String identifier) { return MSG_NOT_FOUND + identifier;}
+
 }

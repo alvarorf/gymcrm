@@ -67,13 +67,13 @@ class TrainerServiceImplTest {
                 .firstName("Seth")
                 .lastName("Rollins")
                 .specialization(typeRequest)
-                .build(); // TODO: We may need a mapper. Fix error here: 'specialization(com.gymcrm.model.@jakarta.validation.constraints.NotNull(message = "Specialization is required") TrainingType)' in 'com.gymcrm.dto.TrainerRegistrationRequest.TrainerRegistrationRequestBuilder' cannot be applied to '(com.gymcrm.dto.TrainingTypeRequest)'
+                .build();
 
-        GeneratedCredentialsResponse mockCreds = new GeneratedCredentialsResponse(USERNAME, "plainPass123", "hashedPass789");
+        GeneratedCredentialsResponse mockCredentials = new GeneratedCredentialsResponse(USERNAME, "plainPass123", "hashedPass789");
 
         when(trainingTypeService.findByName("Strength")).thenReturn(Optional.of(mockType));
         when(trainerMapper.toEntity(eq(request), any(TrainingType.class))).thenReturn(sampleTrainer);
-        when(credentialsGenerator.generate(anyString(), anyString())).thenReturn(mockCreds);
+        when(credentialsGenerator.generate(anyString(), anyString())).thenReturn(mockCredentials);
         when(trainerDao.save(any(Trainer.class))).thenReturn(sampleTrainer);
 
         // ACT
@@ -190,6 +190,62 @@ class TrainerServiceImplTest {
 
         // ASSERT
         assertEquals("newSecurePass", sampleTrainer.getPassword());
+        verify(trainerDao).save(sampleTrainer);
+    }
+
+    @Test
+    @DisplayName("SELECT ID: Should return profile response when ID is found")
+    void selectTrainerProfile_ById_Success() {
+        // ARRANGE
+        Long trainerId = 1L;
+        TrainerProfileResponse expectedResponse = TrainerProfileResponse.builder()
+                .firstName("Seth")
+                .isActive(true)
+                .build();
+
+        when(trainerDao.findById(trainerId)).thenReturn(Optional.of(sampleTrainer));
+        when(trainerMapper.toProfileResponse(sampleTrainer)).thenReturn(expectedResponse);
+
+        // ACT
+        Optional<TrainerProfileResponse> result = trainerService.selectTrainerProfile(trainerId);
+
+        // ASSERT
+        assertTrue(result.isPresent());
+        assertEquals("Seth", result.get().getFirstName());
+        verify(trainerDao).findById(trainerId);
+        verify(trainerMapper).toProfileResponse(sampleTrainer);
+    }
+
+    @Test
+    @DisplayName("TOGGLE ID: Should flip active status from true to false via ID")
+    void toggleActivation_ById_Success() {
+        // ARRANGE
+        Long trainerId = 1L;
+        sampleTrainer.setActive(true);
+        when(trainerDao.findById(trainerId)).thenReturn(Optional.of(sampleTrainer));
+
+        // ACT
+        trainerService.toggleActivation(trainerId);
+
+        // ASSERT
+        assertFalse(sampleTrainer.isActive(), "Trainer status should be toggled to false");
+        verify(trainerDao).findById(trainerId);
+        verify(trainerDao).save(sampleTrainer);
+    }
+
+    @Test
+    @DisplayName("TOGGLE ID: Should flip active status from false to true via ID")
+    void toggleActivation_ById_FlipBackSuccess() {
+        // ARRANGE
+        Long trainerId = 1L;
+        sampleTrainer.setActive(false);
+        when(trainerDao.findById(trainerId)).thenReturn(Optional.of(sampleTrainer));
+
+        // ACT
+        trainerService.toggleActivation(trainerId);
+
+        // ASSERT
+        assertTrue(sampleTrainer.isActive(), "Trainer status should be toggled to true");
         verify(trainerDao).save(sampleTrainer);
     }
 }

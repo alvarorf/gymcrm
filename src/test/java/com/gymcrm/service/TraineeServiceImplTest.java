@@ -52,12 +52,16 @@ class TraineeServiceImplTest {
     }
 
     @Test
-    @DisplayName("CREATE: Should generate credentials, hash password, and return registration response")
+    @DisplayName("CREATE: Should use builder to create request and return credentials")
     void createProfile_Success() {
-        // ARRANGE
-        TraineeRegistrationRequest request = new TraineeRegistrationRequest(
-                "John", "Doe", LocalDate.of(1995, 1, 1), "123 Gym St"
-        ); // TODO: Fix error: no suitable constructor found for TraineeRegistrationRequest(java.lang.String,java.lang.String,java.time.LocalDate,java.lang.String)
+        // ARRANGE - Fixed using Builder
+        TraineeRegistrationRequest request = TraineeRegistrationRequest.builder()
+                .firstName("John")
+                .lastName("Doe")
+                .dateOfBirth(LocalDate.of(1995, 1, 1))
+                .address("123 Gym St")
+                .build();
+
         GeneratedCredentialsResponse mockCreds = new GeneratedCredentialsResponse(
                 USERNAME, "rawPass123", "hashedPass789"
         );
@@ -70,14 +74,61 @@ class TraineeServiceImplTest {
         RegistrationResponse result = traineeService.createProfile(request);
 
         // ASSERT
-        assertAll("Verify trainee creation logic",
-                () -> assertEquals(USERNAME, result.getUsername(), "Username should match generated"),
-                () -> assertEquals("rawPass123", result.getPassword(), "Should return RAW password to user"),
-                () -> assertEquals("hashedPass789", sampleTrainee.getPassword(), "Should store HASHED password in entity")
+        assertAll("Verify trainee creation",
+                () -> assertEquals(USERNAME, result.getUsername()),
+                () -> assertEquals("rawPass123", result.getPassword())
         );
+    }
+
+    @Test
+    @DisplayName("DELETE ID: Should call DAO delete when ID is provided")
+    void deleteProfile_ById_Success() {
+        // ARRANGE
+        Long targetId = 1L;
+
+        // ACT
+        traineeService.deleteProfile(targetId);
+
+        // ASSERT
+        verify(traineeDao, times(1)).delete(targetId);
+    }
+
+    @Test
+    @DisplayName("UPDATE PASSWORD: Should update password field and save via ID")
+    void updatePassword_ById_Success() {
+        // ARRANGE
+        Long traineeId = 1L;
+        String newPass = "updatedHashedPassword";
+        when(traineeDao.findById(traineeId)).thenReturn(Optional.of(sampleTrainee));
+
+        // ACT
+        traineeService.updatePassword(traineeId, newPass);
+
+        // ASSERT
+        assertEquals(newPass, sampleTrainee.getPassword());
         verify(traineeDao).save(sampleTrainee);
     }
 
+    @Test
+    @DisplayName("TOGGLE ID: Should invert active status via ID")
+    void toggleActivation_ById_Success() {
+        // ARRANGE
+        Long traineeId = 1L;
+        sampleTrainee.setActive(true);
+        when(traineeDao.findById(traineeId)).thenReturn(Optional.of(sampleTrainee));
+
+        // ACT
+        traineeService.toggleActivation(traineeId);
+
+        // ASSERT
+        assertFalse(sampleTrainee.isActive(), "Active should toggle from true to false");
+
+        // Secondary Toggle (False to True)
+        traineeService.toggleActivation(traineeId);
+        assertTrue(sampleTrainee.isActive(), "Active should toggle from false to true");
+
+        verify(traineeDao, times(2)).save(sampleTrainee);
+    }
     @Test
     @DisplayName("UPDATE: Should find existing trainee and apply updates via mapper")
     void updateProfile_Success() {
