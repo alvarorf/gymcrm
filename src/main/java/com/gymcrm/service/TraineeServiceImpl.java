@@ -37,8 +37,7 @@ public class TraineeServiceImpl implements TraineeService {
     private final TraineeDao traineeDao;
     private final TraineeMapper traineeMapper;
     // Non-Core Dependencies. Must NOT be final, for injection via Setter
-    @Autowired @Setter private UsernameGenerator usernameGenerator;
-    @Autowired @Setter private PasswordGenerator passwordGenerator;
+    @Autowired @Setter private CredentialsGenerator credentialsGenerator;
     @Autowired @Setter private TrainerDao trainerDao;
 
     // Logger
@@ -61,16 +60,22 @@ public class TraineeServiceImpl implements TraineeService {
         Trainee trainee = traineeMapper.toEntity(request);
 
         // Generate credentials (business logic stays in service)
-        trainee.setUsername(usernameGenerator.generateUsername(trainee.getFirstName(), trainee.getLastName()));
-        trainee.setPassword(passwordGenerator.generatePassword());
+        GeneratedCredentialsResponse credentials = credentialsGenerator.generate(
+                trainee.getFirstName(),
+                trainee.getLastName()
+        );
+
+        // Set the data on the entity
+        trainee.setUsername(credentials.username());
+        trainee.setPassword(credentials.encodedPassword());
 
         // Persist
         Trainee savedTrainee = traineeDao.save(trainee);
 
         Nomenclature.success(logger, Action.CREATE, savedTrainee.getUsername());
 
-        // Map Entity back to the specific Registration DTO
-        return traineeMapper.toRegistrationResponse(savedTrainee);
+        // Return response with the RAW password so the user can log in
+        return new RegistrationResponse(credentials.username(), credentials.rawPassword());
     }
 
     @Override

@@ -7,6 +7,7 @@ import com.gymcrm.model.*;
 import com.gymcrm.service.interfaces.*;
 import com.gymcrm.util.*;
 import lombok.Setter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import com.gymcrm.util.Nomenclature.Action;
@@ -29,8 +30,8 @@ public class TrainerServiceImpl implements TrainerService {
     private final TrainerMapper trainerMapper;
 
     // Non-Core Dependencies. Must NOT be final, for injection via Setter
-    @Setter private UsernameGenerator usernameGenerator;
-    @Setter private PasswordGenerator passwordGenerator;
+    @Autowired
+    @Setter private CredentialsGenerator credentialsGenerator;
     @Setter private TraineeDao traineeDao;
     @Setter private TrainingTypeService trainingTypeService;
 
@@ -52,19 +53,26 @@ public class TrainerServiceImpl implements TrainerService {
 
         // Mapping
         Trainer trainer = trainerMapper.toEntity(request, specialization);
-        trainer.setUsername(usernameGenerator.generateUsername(trainer.getFirstName(), trainer.getLastName()));
-        trainer.setPassword(passwordGenerator.generatePassword());
+
+        // Generate credentials
+        GeneratedCredentialsResponse credentials = credentialsGenerator.generate(
+                trainer.getFirstName(),
+                trainer.getLastName());
+
+        // Set the data on the entity
+        trainer.setUsername(credentials.username());
+        trainer.setPassword(credentials.encodedPassword());
 
         Trainer saved = trainerDao.save(trainer);
         Nomenclature.success(logger, Action.CREATE, saved.getUsername());
 
-        return trainerMapper.toRegistrationResponse(saved);
+        return new RegistrationResponse(credentials.username(), credentials.rawPassword());
     }
 
     @Override
     @PreAuthorize("isAuthenticated()")
     @Transactional
-    public TrainerProfileResponse updateProfile(TrainerUpdateRequest request) {
+    public TrainerProfileResponse updateProfile(TrainerUpdateRequest request) { // TODO: Improve coverage of this method
         Nomenclature.info(logger, Action.UPDATE, request.getUsername());
 
         Trainer existing = trainerDao.findByUsername(request.getUsername())
@@ -85,6 +93,7 @@ public class TrainerServiceImpl implements TrainerService {
                 .map(trainerMapper::toProfileResponse);
     }
 
+    // TODO: Improve coverage for the following methods
     @Override
     @PreAuthorize("isAuthenticated()")
     public Optional<TrainerProfileResponse> selectTrainerProfile(String username) {
