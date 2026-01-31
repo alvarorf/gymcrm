@@ -111,7 +111,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public void deleteProfile(Long id) { // TODO: Improve the coverage of this method. Use ARRANGE/ACT/ASSERT, @DisplayName
+    public void deleteProfile(Long id) {
         Nomenclature.info(logger, Action.DELETE, id);
         traineeDao.delete(id);
     }
@@ -126,7 +126,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public void updatePassword(Long id, String newPassword) { // TODO: Improve the coverage of this method. Use ARRANGE/ACT/ASSERT, @DisplayName
+    public void updatePassword(Long id, String newPassword) {
         traineeDao.findById(id).ifPresent(trainee -> {
             trainee.setPassword(newPassword);
             traineeDao.save(trainee);
@@ -136,7 +136,7 @@ public class TraineeServiceImpl implements TraineeService {
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public void toggleActivation(Long id) { // TODO: Improve the coverage of this method. Use ARRANGE/ACT/ASSERT, @DisplayName
+    public void toggleActivation(Long id) {
         traineeDao.findById(id).ifPresent(trainee -> {
             trainee.setActive(!trainee.isActive());
             traineeDao.save(trainee);

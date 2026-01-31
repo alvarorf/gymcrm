@@ -31,7 +31,7 @@ public class TrainerController {
     // 2. Trainer registration
     @Operation(summary = "Register a new trainer")
     @PostMapping("/register")
-    public ResponseEntity<RegistrationResponse> register(@Valid @RequestBody TrainerRegistrationRequest request) { // TODO: Fix this method. Don't change the signature. Don't change the DTOs
+    public ResponseEntity<RegistrationResponse> register(@Valid @RequestBody TrainerRegistrationRequest request) {
       return ResponseEntity.status(HttpStatus.CREATED)
                 .body(trainerService.createProfile(request));
     }

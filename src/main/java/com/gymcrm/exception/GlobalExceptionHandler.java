@@ -17,7 +17,7 @@ public class GlobalExceptionHandler {
     // Handle "Not Found" logic (triggered by our service layer)
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntime(RuntimeException ex) {
-        // We use 404 for RuntimeExceptions thrown by the service layer's .orElseThrow()
+        // We use 404 for RuntimeExceptions thrown by the service layer
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", ex.getMessage()));

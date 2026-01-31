@@ -86,7 +86,7 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public Optional<TrainerProfileResponse> selectTrainerProfile(Long id) // TODO: Improve the coverage of this method. Use ARRANGE/ACT/ASSERT, @DisplayName
+    public Optional<TrainerProfileResponse> selectTrainerProfile(Long id)
     {
         Nomenclature.info(logger, Action.FETCH, id);
         return trainerDao.findById(id)
@@ -114,7 +114,7 @@ public class TrainerServiceImpl implements TrainerService {
 
     @Override
     @PreAuthorize("isAuthenticated()")
-    public void toggleActivation(Long id) { // TODO: Improve the coverage of this method. Use ARRANGE/ACT/ASSERT, @DisplayName
+    public void toggleActivation(Long id) {
         trainerDao.findById(id).ifPresent(trainer -> {
             trainer.setActive(!trainer.isActive());
             trainerDao.save(trainer);

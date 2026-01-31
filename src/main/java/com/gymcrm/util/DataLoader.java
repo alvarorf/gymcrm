@@ -15,12 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.InputStream;
 import java.util.List;
 
-/*
-    Req3: Implement the ability to initialize storage with some prepared data from the file
-     during the application start (use spring bean post-processing features).
-     Path to the concrete file should be set using property placeholder and external property file.
-*/
-
 @Component
 public class DataLoader {
     private static final Logger logger = LoggerFactory.getLogger(DataLoader.class);
@@ -29,7 +23,7 @@ public class DataLoader {
     private final TrainerRepository trainerRepository;
     private final TrainingRepository trainingRepository;
     private final TrainingTypeRepository trainingTypeRepository;
-    private final PasswordEncoder passwordEncoder; // TODO: Why do we get this warning? Private field 'passwordEncoder' is never assigned. Do we need to address it? We are using spring security
+    private final PasswordEncoder passwordEncoder;
 
     @Autowired
     public DataLoader(TraineeRepository traineeRepository,
@@ -67,9 +61,7 @@ public class DataLoader {
                     Nomenclature.success(logger, Nomenclature.Action.SEED, "Trainers");
                 }
 
-
-                // TODO: The following section within the try block, needs more coverage
-                // 3. Save trainees
+                // Save trainees
                 if (data.getTrainees() != null) {
                     data.getTrainees().forEach(t -> {
                         // ENCODE the plain text password from JSON before saving to MySQL
@@ -79,7 +71,7 @@ public class DataLoader {
                     Nomenclature.success(logger, Nomenclature.Action.SEED, "Trainees");
                 }
 
-                // 4. Save Trainings (must happen last because they refer to Trainees/Trainers)
+                // Save Trainings (must happen last because they refer to Trainees/Trainers)
                 if (data.getTrainings() != null) {
                     trainingRepository.saveAll(data.getTrainings());
                     Nomenclature.success(logger, Nomenclature.Action.SEED, data.getTrainings().size() + " Trainings");                }

@@ -39,7 +39,7 @@ public class TrainerMapper {
                 .specialization(trainer.getSpecialization())
                 .isActive(trainer.isActive())
                 .trainees(trainer.getTrainees() == null ? null : trainer.getTrainees().stream()
-                        .map(this::toTraineeShortResponse)  // TODO: Implement this toTraineeShortResponse method
+                        .map(this::toTraineeShortResponse)
                         .collect(Collectors.toList()))
                 .build();
     }

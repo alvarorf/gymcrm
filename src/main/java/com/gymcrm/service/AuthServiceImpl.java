@@ -1,7 +1,6 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.*;
-import com.gymcrm.mapper.UserMapper;
 import com.gymcrm.security.CustomUserDetailsService;
 import com.gymcrm.service.interfaces.AuthService;
 import com.gymcrm.util.Nomenclature;
@@ -26,7 +25,6 @@ public class AuthServiceImpl implements AuthService {
     public AuthServiceImpl(TraineeDao traineeDao,
                            TrainerDao trainerDao,
                            AuthenticationManager authenticationManager,
-                           UserMapper userMapper,
                            PasswordEncoder passwordEncoder, CustomUserDetailsService customUserDetailsService) {
         this.traineeDao = traineeDao;
         this.trainerDao = trainerDao;
