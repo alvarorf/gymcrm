@@ -1,11 +1,13 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.*;
+import com.gymcrm.mapper.UserMapper;
 import com.gymcrm.service.interfaces.AuthService;
 import com.gymcrm.util.Nomenclature;
 import org.slf4j.*;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.authentication.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.security.core.Authentication;
 
@@ -14,16 +16,23 @@ public class AuthServiceImpl implements AuthService {
     private final TraineeDao traineeDao;
     private final TrainerDao trainerDao;
     private final AuthenticationManager authenticationManager;
+    private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
     // Logger
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
 
     public AuthServiceImpl(TraineeDao traineeDao,
                            TrainerDao trainerDao,
-                           AuthenticationManager authenticationManager) {
+                           AuthenticationManager authenticationManager,
+                           UserMapper userMapper,
+                           PasswordEncoder passwordEncoder) {
         this.traineeDao = traineeDao;
         this.trainerDao = trainerDao;
         this.authenticationManager = authenticationManager;
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+
     }
 
     @Override
@@ -42,21 +51,12 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Query MySQL via DAOs
-        // TODO: Determine if this should actually be done here, in the service. If this is a mapping, perhaps we need a mapper class. This method seems to be doing multiple things at once (or not? What do you think??)
         return traineeDao.findByUsername(username)
-                .map(t -> User.builder()
-                        .username(t.getUsername())
-                        .password(t.getPassword()) // Should be encoded in DB
-                        .roles("TRAINEE")
-                        .build())
+                .map(userMapper::toUserDetails)
                 .orElseGet(() -> trainerDao.findByUsername(username)
-                        .map(t -> User.builder()
-                                .username(t.getUsername())
-                                .password(t.getPassword())
-                                .roles("TRAINER")
-                                .build())
-                        .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username))
-                );
+                        .map(userMapper::toUserDetails)
+                        .orElseThrow(() -> new UsernameNotFoundException(Nomenclature.getNotFoundMsg(username))
+                ));
     }
 
     @Override
@@ -67,11 +67,14 @@ public class AuthServiceImpl implements AuthService {
         // This will throw an AuthenticationException if the old password doesn't match
         authenticate(username, oldPassword);
 
+        // Encode the password before saving!
+        String encodedPassword = passwordEncoder.encode(newPassword);
+
         // If authentication passed, update the user in the database
         // The newPassword should be encoded here via PasswordEncoder
-        boolean updated = updatePasswordInStorage(username, newPassword);
+        boolean updated = updatePasswordInStorage(username, encodedPassword);
 
-        if (!updated) {  throw new UsernameNotFoundException(Nomenclature.getNotFoundMsg(username.getClass()));  }
+        if (!updated) {  throw new UsernameNotFoundException(Nomenclature.getNotFoundMsg(username));  }
 
         Nomenclature.success(logger, Nomenclature.Action.UPDATE_SENSITIVE, username);
     }

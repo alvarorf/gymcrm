@@ -1,7 +1,6 @@
 package com.gymcrm.controller;
 
 import com.gymcrm.dto.PasswordChangeRequest;
-import com.gymcrm.service.AuthServiceImpl;
 import com.gymcrm.service.interfaces.AuthService;
 import com.gymcrm.util.Nomenclature;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +32,7 @@ public class AuthController {
 
         // Validation Logic
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            return ResponseEntity.badRequest().body("Username and password are required."); // TODO: Use (update if necessary) Nomenclature class
+            return ResponseEntity.badRequest().body(Nomenclature.MSG_AUTH_REQUIRED);
         }
 
         try {
