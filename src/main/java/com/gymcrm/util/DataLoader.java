@@ -2,17 +2,10 @@ package com.gymcrm.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.gymcrm.model.Trainee;
-import com.gymcrm.model.Trainer;
-import com.gymcrm.model.Training;
-import com.gymcrm.model.TrainingType;
-import com.gymcrm.repositories.TraineeRepository;
-import com.gymcrm.repositories.TrainerRepository;
-import com.gymcrm.repositories.TrainingRepository;
-import com.gymcrm.repositories.TrainingTypeRepository;
+import com.gymcrm.model.*;
+import com.gymcrm.repositories.*;
 import lombok.Data;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,46 +29,46 @@ public class DataLoader {
     private final TrainerRepository trainerRepository;
     private final TrainingRepository trainingRepository;
     private final TrainingTypeRepository trainingTypeRepository;
-    @Autowired   private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder; // TODO: Why do we get this warning? Private field 'passwordEncoder' is never assigned. Do we need to address it? We are using spring security
 
     @Autowired
     public DataLoader(TraineeRepository traineeRepository,
                       TrainerRepository trainerRepository,
                       TrainingRepository trainingRepository,
-                      TrainingTypeRepository trainingTypeRepository) {
+                      TrainingTypeRepository trainingTypeRepository, PasswordEncoder passwordEncoder) {
         this.traineeRepository = traineeRepository;
         this.trainerRepository = trainerRepository;
         this.trainingRepository = trainingRepository;
         this.trainingTypeRepository = trainingTypeRepository;
+        this.passwordEncoder = passwordEncoder;
         this.objectMapper = new ObjectMapper().registerModule(new JavaTimeModule());
-        logger.info("DataLoader initialized with JPA Repositories."); // TODO: Use Nomenclature class
-    }
+        Nomenclature.info(logger, Nomenclature.Action.INITIALIZE);    }
 
     @Transactional
     public void loadInitialData(String dataPath) {
         try {
-            logger.info("Attempting to load initial data from: {}", dataPath); // TODO: Use Nomenclature class
+            Nomenclature.info(logger, Nomenclature.Action.SEED, dataPath);
             ClassPathResource resource = new ClassPathResource(dataPath);
 
             try (InputStream inputStream = resource.getInputStream()) {
                 DataWrapper data = objectMapper.readValue(inputStream, DataWrapper.class);
 
 
-                // 1. Save training types first (constants)
+                // Save training types first (constants)
                 if (data.getTrainingTypes() != null) {
                     trainingTypeRepository.saveAll(data.getTrainingTypes());
-                    logger.info("Saved Training Types"); // TODO: Use Nomenclature class
+                    Nomenclature.success(logger, Nomenclature.Action.SEED, "Training Types");
                 }
 
-                // 2. Save trainers (they now have valid specialization IDs to point to)
+                // Save trainers (they now have valid specialization IDs to point to)
                 if (data.getTrainers() != null) {
-                    data.getTrainers().forEach(t -> {
-                        t.setPassword(passwordEncoder.encode(t.getPassword()));
-                    });
+                    data.getTrainers().forEach(t -> t.setPassword(passwordEncoder.encode(t.getPassword())));
                     trainerRepository.saveAll(data.getTrainers());
-                    logger.info("Saved Trainers"); // TODO: Use Nomenclature class
+                    Nomenclature.success(logger, Nomenclature.Action.SEED, "Trainers");
                 }
 
+
+                // TODO: The following section within the try block, needs more coverage
                 // 3. Save trainees
                 if (data.getTrainees() != null) {
                     data.getTrainees().forEach(t -> {
@@ -83,18 +76,19 @@ public class DataLoader {
                         t.setPassword(passwordEncoder.encode(t.getPassword()));
                     });
                     traineeRepository.saveAll(data.getTrainees());
-                    logger.info("Saved Trainees"); // TODO: Use Nomenclature class
+                    Nomenclature.success(logger, Nomenclature.Action.SEED, "Trainees");
                 }
 
                 // 4. Save Trainings (must happen last because they refer to Trainees/Trainers)
                 if (data.getTrainings() != null) {
                     trainingRepository.saveAll(data.getTrainings());
-                    logger.info("Successfully persisted {} Trainings.", data.getTrainings().size()); // TODO: Use Nomenclature class
-                }
+                    Nomenclature.success(logger, Nomenclature.Action.SEED, data.getTrainings().size() + " Trainings");                }
 
             }
-        } catch (Exception e) {
-            logger.error("Failed to load initial data from path: {}. Error: {}", dataPath, e.getMessage()); // TODO: Use Nomenclature class
+        }
+        catch (Exception e)
+        {
+            Nomenclature.warn(logger, Nomenclature.Action.SEED, dataPath);
         }
     }
 

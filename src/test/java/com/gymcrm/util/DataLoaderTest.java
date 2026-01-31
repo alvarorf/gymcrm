@@ -1,15 +1,13 @@
 package com.gymcrm.util;
 
-import com.gymcrm.repositories.TraineeRepository;
-import com.gymcrm.repositories.TrainerRepository;
-import com.gymcrm.repositories.TrainingRepository;
-import com.gymcrm.repositories.TrainingTypeRepository;
+import com.gymcrm.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
@@ -23,12 +21,16 @@ public class DataLoaderTest {
     @Mock private TrainerRepository trainerRepository;
     @Mock private TrainingRepository trainingRepository;
     @Mock private TrainingTypeRepository trainingTypeRepository;
+    @Mock private PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void setUp() {
         // ARRANGE
         dataLoader =
-                new DataLoader(traineeRepository, trainerRepository, trainingRepository, trainingTypeRepository);
+                new DataLoader(traineeRepository, trainerRepository, trainingRepository, trainingTypeRepository, passwordEncoder);
+
+        // Mock password encoding behavior
+        lenient().when(passwordEncoder.encode(anyString())).thenReturn("encoded_password");
     }
 
     @Test
