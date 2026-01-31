@@ -9,12 +9,9 @@ import com.gymcrm.model.Trainer;
 import com.gymcrm.model.TrainingType;
 import com.gymcrm.service.interfaces.TrainingTypeService;
 import com.gymcrm.util.CredentialsGenerator;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.*;

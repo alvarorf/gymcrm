@@ -1,8 +1,6 @@
 package com.gymcrm.controller;
 
 import com.gymcrm.dto.TrainingCreateRequest;
-import com.gymcrm.service.interfaces.TraineeService;
-import com.gymcrm.service.interfaces.TrainerService;
 import com.gymcrm.service.interfaces.TrainingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,15 +14,9 @@ import org.springframework.web.bind.annotation.*;
 public class TrainingController {
 
     private final TrainingService trainingService;
-    private final TraineeService traineeService;
-    private final TrainerService trainerService;
 
-    public TrainingController(TrainingService trainingService,
-                              TraineeService traineeService,
-                              TrainerService trainerService) {
+    public TrainingController(TrainingService trainingService) {
         this.trainingService = trainingService;
-        this.traineeService = traineeService;
-        this.trainerService = trainerService;
     }
 
     @Operation(summary = "Add a new training session")
