@@ -11,6 +11,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 
+// Note: BCrypt is a salt-based hashing algorithm by default
+// It: 1. Generates a random salt and combines it with the password. 3. Hashes it multiple times 4. Stores the salt in the resulting string
+
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration

@@ -1,15 +1,9 @@
 package com.gymcrm.controller;
 
-import com.gymcrm.dto.TraineeProfileResponse;
-import com.gymcrm.dto.TrainerProfileResponse;
 import com.gymcrm.dto.TrainingCreateRequest;
-import com.gymcrm.model.Trainee;
-import com.gymcrm.model.Trainer;
-import com.gymcrm.model.Training;
 import com.gymcrm.service.interfaces.TraineeService;
 import com.gymcrm.service.interfaces.TrainerService;
 import com.gymcrm.service.interfaces.TrainingService;
-import com.gymcrm.util.Nomenclature;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

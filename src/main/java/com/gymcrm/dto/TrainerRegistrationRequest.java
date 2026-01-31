@@ -1,8 +1,7 @@
 package com.gymcrm.dto;
 
 import com.gymcrm.model.TrainingType;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.*;
 
 // Requirement 2.a: Trainer Registration Request
@@ -18,5 +17,5 @@ public class TrainerRegistrationRequest {
     private String lastName;
 
     @NotNull(message = "Specialization is required") // Requirement 2.a.III
-    private TrainingType specialization;  // TODO: We do need a TrainingType here. We MUST have a TrainingType here
+    private TrainingType specialization;
 }

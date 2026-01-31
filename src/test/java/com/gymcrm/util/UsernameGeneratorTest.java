@@ -3,7 +3,6 @@ package com.gymcrm.util;
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainee;
-import com.gymcrm.model.Trainer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

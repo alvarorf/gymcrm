@@ -4,8 +4,6 @@ import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;
 import org.springframework.stereotype.Component;
 
-import java.security.SecureRandom;
-
 @Component // A bean to be managed by Spring
 public class UsernameGenerator {
 

@@ -9,7 +9,6 @@ import com.gymcrm.util.*;
 import lombok.Setter;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import com.gymcrm.util.Nomenclature;
 import com.gymcrm.util.Nomenclature.Action;
 
 import java.util.*;

@@ -9,20 +9,16 @@ import com.gymcrm.dto.TraineeUpdateRequest;
 import com.gymcrm.mapper.TraineeMapper;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
-import com.gymcrm.util.Nomenclature;
 import com.gymcrm.util.UsernameGenerator;
 import com.gymcrm.util.PasswordGenerator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 

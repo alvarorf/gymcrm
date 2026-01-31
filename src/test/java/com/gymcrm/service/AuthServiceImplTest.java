@@ -17,7 +17,6 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,20 +56,26 @@ class AuthServiceImplTest {
     void loadUserByUsername_TraineeFound() {
         // ARRANGE
         String username = "trainee.joe";
-        Trainee mockTrainee = Trainee.builder().username(username).build();
-        UserDetails mockDetails = User.builder().username(username).password("p").roles("TRAINEE").build();
+        // Give the mock entity a password to avoid internal NPEs if needed
+        Trainee mockTrainee = Trainee.builder().username(username).password("encoded_pass").build();
+
+        UserDetails mockDetails = User.builder()
+                .username(username)
+                .password("encoded_pass")
+                .roles("TRAINEE")
+                .build();
 
         when(traineeDao.findByUsername(username)).thenReturn(Optional.of(mockTrainee));
         when(userMapper.toUserDetails(mockTrainee)).thenReturn(mockDetails);
 
         // ACT
-        UserDetails result = authService.loadUserByUsername(username); // TODO: We get a warning: java.lang.IllegalArgumentException: password cannot be null. Handle and test for the exception
+        UserDetails result = authService.loadUserByUsername(username);
 
         // ASSERT
         assertNotNull(result);
         assertEquals(username, result.getUsername());
         verify(traineeDao).findByUsername(username);
-        verify(trainerDao, never()).findByUsername(anyString());
+        verify(userMapper).toUserDetails(mockTrainee); // Verify mapper was used
     }
 
     @Test
