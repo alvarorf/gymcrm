@@ -2,6 +2,7 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.mapper.UserMapper;
+import com.gymcrm.security.CustomUserDetailsService;
 import com.gymcrm.service.interfaces.AuthService;
 import com.gymcrm.util.Nomenclature;
 import org.slf4j.*;
@@ -16,8 +17,8 @@ public class AuthServiceImpl implements AuthService {
     private final TraineeDao traineeDao;
     private final TrainerDao trainerDao;
     private final AuthenticationManager authenticationManager;
-    private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
+    private final CustomUserDetailsService customUserDetailsService;
 
     // Logger
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
@@ -26,13 +27,12 @@ public class AuthServiceImpl implements AuthService {
                            TrainerDao trainerDao,
                            AuthenticationManager authenticationManager,
                            UserMapper userMapper,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder, CustomUserDetailsService customUserDetailsService) {
         this.traineeDao = traineeDao;
         this.trainerDao = trainerDao;
         this.authenticationManager = authenticationManager;
-        this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
-
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Override
@@ -50,13 +50,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Query MySQL via DAOs
-        return traineeDao.findByUsername(username)
-                .map(userMapper::toUserDetails)
-                .orElseGet(() -> trainerDao.findByUsername(username)
-                        .map(userMapper::toUserDetails)
-                        .orElseThrow(() -> new UsernameNotFoundException(Nomenclature.getNotFoundMsg(username))
-                ));
+        return customUserDetailsService.loadUserByUsername(username);
     }
 
     @Override

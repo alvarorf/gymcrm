@@ -1,8 +1,8 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.*;
-import com.gymcrm.mapper.UserMapper;
 import com.gymcrm.model.Trainee;
+import com.gymcrm.security.CustomUserDetailsService;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -12,6 +12,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
@@ -24,10 +25,9 @@ import static org.mockito.Mockito.*;
 class AuthServiceImplTest {
 
     @Mock private TraineeDao traineeDao;
-    @Mock private TrainerDao trainerDao;
     @Mock private AuthenticationManager authenticationManager;
-    @Mock
-    private UserMapper userMapper;
+    @Mock private PasswordEncoder passwordEncoder;
+    @Mock private CustomUserDetailsService customUserDetailsService;
 
     @InjectMocks
     private AuthServiceImpl authService;
@@ -52,21 +52,18 @@ class AuthServiceImplTest {
     }
 
     @Test
-    @DisplayName("LOAD USER: Should load trainee if present")
-    void loadUserByUsername_TraineeFound() {
+    @DisplayName("LOAD USER: Should delegate to CustomUserDetailsService")
+    void loadUserByUsername_Delegation() {
         // ARRANGE
         String username = "trainee.joe";
-        // Give the mock entity a password to avoid internal NPEs if needed
-        Trainee mockTrainee = Trainee.builder().username(username).password("encoded_pass").build();
-
         UserDetails mockDetails = User.builder()
                 .username(username)
                 .password("encoded_pass")
                 .roles("TRAINEE")
                 .build();
 
-        when(traineeDao.findByUsername(username)).thenReturn(Optional.of(mockTrainee));
-        when(userMapper.toUserDetails(mockTrainee)).thenReturn(mockDetails);
+        // We stub the custom service, because that's what AuthServiceImpl calls
+        when(customUserDetailsService.loadUserByUsername(username)).thenReturn(mockDetails);
 
         // ACT
         UserDetails result = authService.loadUserByUsername(username);
@@ -74,30 +71,32 @@ class AuthServiceImplTest {
         // ASSERT
         assertNotNull(result);
         assertEquals(username, result.getUsername());
-        verify(traineeDao).findByUsername(username);
-        verify(userMapper).toUserDetails(mockTrainee); // Verify mapper was used
+        verify(customUserDetailsService, times(1)).loadUserByUsername(username);
     }
-
     @Test
-    @DisplayName("CHANGE PASSWORD: Should update trainee password after successful auth")
+    @DisplayName("CHANGE PASSWORD: Should encode and update trainee password")
     void changePassword_TraineeSuccess() {
         // ARRANGE
         String username = "john.doe";
         String oldPass = "old123";
         String newPass = "new456";
+        String encodedPass = "encoded_new456";
         Trainee trainee = Trainee.builder().username(username).password(oldPass).build();
 
         UserDetails mockDetails = User.builder().username(username).password(oldPass).roles("TRAINEE").build();
         Authentication mockAuth = new UsernamePasswordAuthenticationToken(mockDetails, oldPass);
 
+        // Stubbing all necessary dependencies
         when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
         when(traineeDao.findByUsername(username)).thenReturn(Optional.of(trainee));
+        when(passwordEncoder.encode(newPass)).thenReturn(encodedPass);
 
         // ACT
         authService.changePassword(username, oldPass, newPass);
 
         // ASSERT
-        assertEquals(newPass, trainee.getPassword());
+        assertEquals(encodedPass, trainee.getPassword());
+        verify(passwordEncoder).encode(newPass);
         verify(traineeDao).save(trainee);
     }
 }
