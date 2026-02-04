@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Authentication Service Unit Tests")
+@DisplayName("Authentication Service unit tests")
 class AuthServiceImplTest {
 
     @Mock private TraineeDao traineeDao;

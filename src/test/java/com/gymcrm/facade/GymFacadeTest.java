@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Gym Facade Unit Tests")
+@DisplayName("Gym Facade unit tests")
 class GymFacadeTest {
 
     @Mock private AuthService authService;

@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Training Type Service Unit Tests")
+@DisplayName("Training Type Service unit tests")
 class TrainingTypeServiceImplTest {
 
     @Mock

@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(TrainingTypeController.class)
-@DisplayName("Training Type Controller Unit Tests")
+@DisplayName("Training Type controller unit tests")
 class TrainingTypeControllerTest {
 
     @Autowired private MockMvc mockMvc;

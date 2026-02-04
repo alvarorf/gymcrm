@@ -1,9 +1,6 @@
 package com.gymcrm.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 // Requirement 8.b.V: Trainee details inside Trainer profile
 @Data

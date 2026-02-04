@@ -2,8 +2,7 @@ package com.gymcrm.dao;
 
 import com.gymcrm.model.Training;
 import com.gymcrm.repositories.TrainingRepository;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -16,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Training DAO Unit Tests")
+@DisplayName("Training DAO unit tests")
 class TrainingDaoImplTest {
 
     @Mock

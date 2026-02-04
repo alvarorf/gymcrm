@@ -1,12 +1,9 @@
 package com.gymcrm.service;
 
-import com.gymcrm.dao.interfaces.TraineeDao;
-import com.gymcrm.dao.interfaces.TrainerDao;
+import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.dto.*;
 import com.gymcrm.mapper.TrainerMapper;
-import com.gymcrm.model.Trainee;
-import com.gymcrm.model.Trainer;
-import com.gymcrm.model.TrainingType;
+import com.gymcrm.model.*;
 import com.gymcrm.service.interfaces.TrainingTypeService;
 import com.gymcrm.util.CredentialsGenerator;
 import org.junit.jupiter.api.*;
@@ -21,7 +18,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Trainer Service Unit Tests")
+@DisplayName("Trainer Service unit tests")
 class TrainerServiceImplTest {
 
     @Mock private TrainerDao trainerDao;

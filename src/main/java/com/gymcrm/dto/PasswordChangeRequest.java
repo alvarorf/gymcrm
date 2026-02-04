@@ -2,9 +2,11 @@ package com.gymcrm.dto;
 
 import com.gymcrm.util.Nomenclature;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Data;
+import lombok.*;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class PasswordChangeRequest {
     @NotBlank(message = Nomenclature.REQD.USERNAME)
     private String username;
