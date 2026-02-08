@@ -1,16 +1,13 @@
 package com.gymcrm.controller;
 
 import com.gymcrm.dto.*;
-import com.gymcrm.service.interfaces.TrainerService;
-import com.gymcrm.service.interfaces.TrainingService;
+import com.gymcrm.service.interfaces.*;
 import com.gymcrm.util.Nomenclature;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -23,7 +20,7 @@ public class TrainerController {
 
     private final TrainerService trainerService;
 
-    @Autowired @Setter private TrainingService trainingService;
+    @Setter private TrainingService trainingService;
 
     public TrainerController(TrainerService trainerService) {
         this.trainerService = trainerService;

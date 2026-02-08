@@ -31,7 +31,7 @@ public class AuthController {
     public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
 
         // Validation Logic
-        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {  // TODO: Expand coverage for this section
             return ResponseEntity.badRequest().body(Nomenclature.MSG_AUTH_REQUIRED);
         }
 
