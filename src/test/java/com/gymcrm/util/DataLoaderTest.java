@@ -1,7 +1,7 @@
 package com.gymcrm.util;
 
+import com.gymcrm.core.util.DataLoader;
 import com.gymcrm.repositories.*;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;

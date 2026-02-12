@@ -1,7 +1,6 @@
 package com.gymcrm.model;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 

@@ -1,4 +1,4 @@
-package com.gymcrm.config.logging;
+package com.gymcrm.core.config.logging;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;

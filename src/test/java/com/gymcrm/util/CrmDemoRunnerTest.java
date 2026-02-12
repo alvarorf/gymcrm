@@ -1,5 +1,6 @@
 package com.gymcrm.util;
 
+import com.gymcrm.core.util.CrmDemoRunner;
 import com.gymcrm.dto.*;
 import com.gymcrm.facade.GymFacade;
 import com.gymcrm.mapper.*;

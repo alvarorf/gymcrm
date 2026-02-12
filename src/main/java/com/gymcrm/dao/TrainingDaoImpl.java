@@ -3,16 +3,13 @@ package com.gymcrm.dao;
 import com.gymcrm.dao.interfaces.TrainingDao;
 import com.gymcrm.model.Training;
 import com.gymcrm.repositories.TrainingRepository;
-import com.gymcrm.util.Nomenclature;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.gymcrm.core.util.Nomenclature;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 // Logging
-import org.slf4j.Logger; // Simple Logging Facade for Java
-import org.slf4j.LoggerFactory;
+import org.slf4j.*; // Simple Logging Facade for Java
 import org.springframework.transaction.annotation.Transactional;
 
 @Repository
@@ -20,8 +17,6 @@ public class TrainingDaoImpl implements TrainingDao {
     private static final Logger logger = LoggerFactory.getLogger(TrainingDaoImpl.class);
     private final TrainingRepository trainingRepository;
 
-    // Req4: DAO with storage bean should be inserted into services beans using auto wiring.
-    @Autowired
     public TrainingDaoImpl(TrainingRepository trainingRepository) {
         this.trainingRepository = trainingRepository;
     }

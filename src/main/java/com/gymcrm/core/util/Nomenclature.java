@@ -1,4 +1,4 @@
-package com.gymcrm.util;
+package com.gymcrm.core.util;
 
 import org.slf4j.Logger;
 
@@ -57,13 +57,47 @@ public final class Nomenclature {
         public static final String TRAINING_DURATION = "Training Duration is required";
     }
 
+    public static final class ERR {
+        // Module & Field Headers
+        public static final String MODULE_TRAINEE = "TRAINEE_SERVICE";
+        public static final String MODULE_AUTH = "AUTH_SERVICE";
+        public static final String KEY_DETAILS = "details";
+        public static final String KEY_SUGGESTION = "suggestion";
+        public static final String KEY_MESSAGE = "message";
+        public static final String KEY_ERR_TYPE = "error_type";
+
+        // Error Types
+        public static final String TYPE_INTERNAL = "Internal Server Error";
+        public static final String TYPE_REG_FAILED = "Registration Failed";
+        public static final String TYPE_UPDATE_REFUSED = "Update Refused";
+        public static final String TYPE_TOGGLE_FAILED = "Activation Toggle Failed";
+        public static final String TYPE_NOT_FOUND = "Profile Not Found";
+        public static final String TYPE_DEL_FAILED = "Deletion Impossible";
+
+        // Auth Error Types
+        public static final String TYPE_AUTH_FAILED = "Authentication Denied";
+        public static final String TYPE_CREDENTIALS_INVALID = "Invalid Credentials";
+        public static final String TYPE_USER_NOT_FOUND = "User Identity Unknown";
+        public static final String TYPE_SAME_PASSWORD = "Password Change Rejected";
+
+        // Detail Templates
+        public static final String DETAIL_SAME_PASSWORD = "New password cannot be the same as the old password.";
+        public static final String SUGGESTION_LOGIN = "Please check your username and password and try again.";
+
+        // Detail Templates
+        public static final String DETAIL_REG_MISSING = "Mandatory fields: %s and %s are missing or empty.";
+        public static final String DETAIL_UPDATE_REQD = "Updating a trainee requires: %s and %s.";
+        public static final String DETAIL_DEL_PREFIX = "Cannot delete trainee: ";
+        public static final String SUGGESTION_VERIFY_NOMEN = "Please verify the Trainee nomenclature requirements.";
+    }
+
     // --- Validation, response and server error messages ---
     public static final String MSG_LOGIN_SUCCESS = "Login successful";
     public static final String MSG_INVALID_CREDENTIALS = "Invalid credentials";
     public static final String MSG_AUTH_FAILED = "Authentication failed: ";
     public static final String MSG_AUTH_REQUIRED = "Username and password are required.";
     public static final String MSG_PASSWORD_CHANGED = "Password changed successfully";
-    public static final String MSG_PASSWORD_CHANGE_FAILED = "Password change failed with errors";
+    public static final String MSG_PASSWORD_CHANGE_FAILED = "Password change failed with errors"; // TODO: Use this in the AuthControllerExceptionHandler, add corresponding unit test (use @DisplayName and ARRANGE/ACT/ASSERT separately)
 
 
     // --- Dictionary and Error Messages ---

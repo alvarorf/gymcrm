@@ -1,4 +1,4 @@
-package com.gymcrm.util;
+package com.gymcrm.core.util;
 
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.dao.interfaces.TrainerDao;

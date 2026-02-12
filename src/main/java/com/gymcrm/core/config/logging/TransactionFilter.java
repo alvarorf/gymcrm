@@ -1,6 +1,6 @@
 // Creates a UUID and pushes it to MDC. This ID is shared across all logs in the thread and sent back to the user via header
 
-package com.gymcrm.config.logging;
+package com.gymcrm.core.config.logging;
 
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletResponse;

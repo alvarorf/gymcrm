@@ -1,16 +1,17 @@
 package com.gymcrm.service;
 
+import com.gymcrm.core.util.CredentialsGenerator;
+import com.gymcrm.core.util.Nomenclature;
 import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.dto.*;
 import com.gymcrm.mapper.TrainerMapper;
 import com.gymcrm.model.*;
 import com.gymcrm.service.interfaces.*;
-import com.gymcrm.util.*;
+import com.gymcrm.core.util.*;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import com.gymcrm.util.Nomenclature.Action;
+import com.gymcrm.core.util.Nomenclature.Action;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -30,7 +31,6 @@ public class TrainerServiceImpl implements TrainerService {
     private final TrainerMapper trainerMapper;
 
     // Non-Core Dependencies. Must NOT be final, for injection via Setter
-    @Autowired
     @Setter private CredentialsGenerator credentialsGenerator;
     @Setter private TraineeDao traineeDao;
     @Setter private TrainingTypeService trainingTypeService;

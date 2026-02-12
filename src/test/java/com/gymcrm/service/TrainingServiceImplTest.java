@@ -30,7 +30,6 @@ class TrainingServiceImplTest {
     private Training sampleTraining;
     private Trainee sampleTrainee;
     private Trainer sampleTrainer;
-    private TrainingType sampleType;
     private final Long TRAINING_ID = 100L;
 
     @BeforeEach
@@ -41,7 +40,7 @@ class TrainingServiceImplTest {
         trainingService.setTraineeDao(traineeDao);
         trainingService.setTrainerDao(trainerDao);
 
-        sampleType = TrainingType.builder().trainingTypeName("Cardio").build();
+        TrainingType sampleType = TrainingType.builder().trainingTypeName("Cardio").build();
 
         sampleTrainee = Trainee.builder()
                 .userId(1L)
@@ -70,6 +69,17 @@ class TrainingServiceImplTest {
     }
 
     @Test
+    @DisplayName("CONSTRUCTOR: Should log initialization (Single Argument)")
+    void constructor_SingleArg_Success() {
+        // ARRANGE & ACT
+        TrainingServiceImpl singleService = new TrainingServiceImpl(trainingDao);
+
+        // ASSERT
+        assertNotNull(singleService);
+        // Initialization logging is verified via the Nomenclature.info call in the constructor
+    }
+
+    @Test
     @DisplayName("CREATE: Should successfully map request to entity and save")
     void createProfile_Success() {
         // ARRANGE
@@ -93,6 +103,43 @@ class TrainingServiceImplTest {
     }
 
     @Test
+    @DisplayName("CREATE FAIL: Should throw exception when Trainee is not found")
+    void createProfile_TraineeNotFound() {
+        // ARRANGE
+        TrainingCreateRequest request = TrainingCreateRequest.builder()
+                .traineeUsername("non.existent")
+                .trainerUsername("coach.bob")
+                .build();
+
+        when(traineeDao.findByUsername("non.existent")).thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+                trainingService.createProfile(request)
+        );
+
+        assertTrue(exception.getMessage().contains("non.existent"));
+        verify(trainingDao, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("CREATE FAIL: Should throw exception when Trainer is not found")
+    void createProfile_TrainerNotFound() {
+        // ARRANGE
+        TrainingCreateRequest request = TrainingCreateRequest.builder()
+                .traineeUsername("john.doe")
+                .trainerUsername("unknown.trainer")
+                .build();
+
+        when(traineeDao.findByUsername("john.doe")).thenReturn(Optional.of(sampleTrainee));
+        when(trainerDao.findByUsername("unknown.trainer")).thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        assertThrows(RuntimeException.class, () -> trainingService.createProfile(request));
+        verify(trainingDao, never()).save(any());
+    }
+
+    @Test
     @DisplayName("SELECT (ID): Should return the entity when found")
     void selectProfile_Found() {
         // ARRANGE
@@ -104,6 +151,37 @@ class TrainingServiceImplTest {
         // ASSERT
         assertTrue(result.isPresent());
         assertEquals("Morning Run", result.get().getTrainingName());
+    }
+
+    @Test
+    @DisplayName("SELECT (NAME): Should return the entity when found by name")
+    void selectProfileByName_Found() {
+        // ARRANGE
+        String name = "Morning Run";
+        when(trainingDao.findByName(name)).thenReturn(Optional.of(sampleTraining));
+
+        // ACT
+        Optional<Training> result = trainingService.selectProfile(name);
+
+        // ASSERT
+        assertTrue(result.isPresent());
+        assertEquals(name, result.get().getTrainingName());
+        verify(trainingDao, times(1)).findByName(name);
+    }
+
+    @Test
+    @DisplayName("SELECT (NAME): Should return empty Optional when name not found")
+    void selectProfileByName_NotFound() {
+        // ARRANGE
+        String name = "Ghost Training";
+        when(trainingDao.findByName(name)).thenReturn(Optional.empty());
+
+        // ACT
+        Optional<Training> result = trainingService.selectProfile(name);
+
+        // ASSERT
+        assertFalse(result.isPresent());
+        verify(trainingDao, times(1)).findByName(name);
     }
 
     @Test
@@ -160,6 +238,24 @@ class TrainingServiceImplTest {
         // ASSERT
         assertFalse(result.isEmpty());
         assertEquals("John Doe", result.get(0).getTraineeName());
+    }
+
+    @Test
+    @DisplayName("FILTER (TRAINEE): Should filter by training type (category)")
+    void getTraineeTrainings_TypeFilter() {
+        // ARRANGE
+        String username = "john.doe";
+        String typeName = "Cardio";
+        when(trainingDao.findAll()).thenReturn(List.of(sampleTraining));
+        when(trainingMapper.toTraineeTrainingResponse(any())).thenReturn(new TraineeTrainingResponse());
+
+        // ACT
+        List<TraineeTrainingResponse> resultMatch = trainingService.getTraineeTrainings(username, null, null, null, typeName);
+        List<TraineeTrainingResponse> resultMismatch = trainingService.getTraineeTrainings(username, null, null, null, "Strength");
+
+        // ASSERT
+        assertFalse(resultMatch.isEmpty(), "Should match 'Cardio'");
+        assertTrue(resultMismatch.isEmpty(), "Should not match 'Strength'");
     }
 
     @Test

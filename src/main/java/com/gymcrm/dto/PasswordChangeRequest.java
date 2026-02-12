@@ -1,6 +1,6 @@
 package com.gymcrm.dto;
 
-import com.gymcrm.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 

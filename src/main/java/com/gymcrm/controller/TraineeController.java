@@ -1,9 +1,8 @@
 package com.gymcrm.controller;
 
 import com.gymcrm.dto.*;
-import com.gymcrm.service.interfaces.TraineeService;
-import com.gymcrm.service.interfaces.TrainerService;
-import com.gymcrm.util.Nomenclature;
+import com.gymcrm.service.interfaces.*;
+import com.gymcrm.core.util.Nomenclature;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -42,7 +41,7 @@ public class TraineeController {
         return traineeService.selectTraineeProfile(username)
                 .map(ResponseEntity::ok)
                 .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(username)));
-    }
+    } // TODO: Expand coverage for this method
 
     // 6. Update trainee profile
     @Operation(summary = "Update trainee profile")
@@ -57,20 +56,20 @@ public class TraineeController {
     public ResponseEntity<Void> delete(@PathVariable String username) {
         traineeService.deleteProfile(username);
         return ResponseEntity.ok().build();
-    }
+    } // TODO: Expand coverage for this method
 
     // Activate/de-activate trainee
     @Operation(summary = "Activate or deactivate Trainee")
     @PatchMapping("/activation")
     public ResponseEntity<Void> toggleActivation(@Valid @RequestBody ActivationRequest request) {
         traineeService.toggleActivation(request.getUsername());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok().build(); // TODO: Expand coverage for this method
     }
 
     // 10. Get not assigned on trainee active trainers
     @Operation(summary = "Get active trainers not assigned to the given trainee")
     @GetMapping("/{username}/unassigned-trainers")
     public ResponseEntity<List<TrainerShortResponse>> getUnassignedTrainers(@PathVariable String username) {
-        return ResponseEntity.ok(trainerService.getUnassignedActiveTrainersByTraineeUsername(username));
+        return ResponseEntity.ok(trainerService.getUnassignedActiveTrainersByTraineeUsername(username)); // TODO: Expand coverage for this method
     }
 }

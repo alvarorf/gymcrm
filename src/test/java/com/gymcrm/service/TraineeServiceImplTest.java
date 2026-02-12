@@ -6,7 +6,7 @@ import com.gymcrm.dto.*;
 import com.gymcrm.mapper.TraineeMapper;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.model.Trainer;
-import com.gymcrm.util.CredentialsGenerator;
+import com.gymcrm.core.util.CredentialsGenerator;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

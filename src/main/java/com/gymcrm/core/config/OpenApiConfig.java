@@ -1,4 +1,4 @@
-package com.gymcrm.config;
+package com.gymcrm.core.config;
 
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.Components;

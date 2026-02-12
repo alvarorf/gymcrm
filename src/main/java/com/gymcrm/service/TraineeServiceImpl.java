@@ -1,16 +1,16 @@
 package com.gymcrm.service;
 
+import com.gymcrm.core.util.*;
 import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.dto.*;
 import com.gymcrm.mapper.TraineeMapper;
 import com.gymcrm.model.*;
 import com.gymcrm.service.interfaces.TraineeService;
-import com.gymcrm.util.*;
+import com.gymcrm.core.util.*;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import com.gymcrm.util.Nomenclature.Action;
+import com.gymcrm.core.util.Nomenclature.Action;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,18 +36,19 @@ public class TraineeServiceImpl implements TraineeService {
     // Why final? Because TraineeDao is a core dependency, injected via the constructor
     private final TraineeDao traineeDao;
     private final TraineeMapper traineeMapper;
-    // Non-Core Dependencies. Must NOT be final, for injection via Setter
-    @Autowired @Setter private CredentialsGenerator credentialsGenerator;
-    @Autowired @Setter private TrainerDao trainerDao;
+    @Setter private CredentialsGenerator credentialsGenerator;
+    @Setter private TrainerDao trainerDao;
 
     // Logger
     private static final Logger logger = LoggerFactory.getLogger(TraineeServiceImpl.class);
 
     // Constructor-based injection (only for core dependencies)
-    public TraineeServiceImpl(TraineeDao traineeDao, TraineeMapper traineeMapper)
+    public TraineeServiceImpl(TraineeDao traineeDao, TraineeMapper traineeMapper, CredentialsGenerator credentialsGenerator, TrainerDao trainerDao)
     {
         this.traineeDao = traineeDao;
         this.traineeMapper = traineeMapper;
+        this.credentialsGenerator = credentialsGenerator;
+        this.trainerDao = trainerDao;
         Nomenclature.info(logger, Action.INITIALIZE);
     }
 

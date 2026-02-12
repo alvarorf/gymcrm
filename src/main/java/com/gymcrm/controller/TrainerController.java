@@ -2,7 +2,7 @@ package com.gymcrm.controller;
 
 import com.gymcrm.dto.*;
 import com.gymcrm.service.interfaces.*;
-import com.gymcrm.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

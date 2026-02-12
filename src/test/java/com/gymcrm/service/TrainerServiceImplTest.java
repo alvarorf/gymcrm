@@ -5,7 +5,7 @@ import com.gymcrm.dto.*;
 import com.gymcrm.mapper.TrainerMapper;
 import com.gymcrm.model.*;
 import com.gymcrm.service.interfaces.TrainingTypeService;
-import com.gymcrm.util.CredentialsGenerator;
+import com.gymcrm.core.util.CredentialsGenerator;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;

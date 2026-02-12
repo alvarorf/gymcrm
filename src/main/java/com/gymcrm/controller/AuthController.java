@@ -2,15 +2,13 @@ package com.gymcrm.controller;
 
 import com.gymcrm.dto.PasswordChangeRequest;
 import com.gymcrm.service.interfaces.AuthService;
-import com.gymcrm.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.slf4j.*;
+import org.springframework.http.*;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,45 +24,30 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @Operation(summary = "3. Login")
+    @Operation(summary = "Login")
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
 
-        // Validation Logic
-        if (username == null || username.isBlank() || password == null || password.isBlank()) {  // TODO: Expand coverage for this section
-            return ResponseEntity.badRequest().body(Nomenclature.MSG_AUTH_REQUIRED);
+        // Validation: If blank, throw to be caught by AuthControllerExceptionHandler
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+            throw new BadCredentialsException(Nomenclature.MSG_AUTH_REQUIRED);
         }
 
-        try {
-            // Check if UserDetails is returned
-            UserDetails user = authService.authenticate(username, password);
+        // authenticate() should throw UsernameNotFoundException or BadCredentialsException internally if it fails
+        authService.authenticate(username, password);
 
-            if (user != null) {
-                return ResponseEntity.ok(Nomenclature.MSG_LOGIN_SUCCESS);
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Nomenclature.MSG_INVALID_CREDENTIALS);
-            }
-        } catch (Exception e) {
-            // Handle specific authentication exceptions
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Nomenclature.MSG_AUTH_FAILED + e.getMessage());
-        }
+        return ResponseEntity.ok(Nomenclature.MSG_LOGIN_SUCCESS); // TODO: Improve coverage for this line
+
     }
 
-    @Operation(summary = "4. Change Login (Password)")
+    @Operation(summary = "Change login (password)")
     @PutMapping("/change-password")
     public ResponseEntity<String> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
-        try {
             authService.changePassword(
                     request.getUsername(),
                     request.getOldPassword(),
                     request.getNewPassword()
             );
-            return ResponseEntity.ok(Nomenclature.MSG_PASSWORD_CHANGED);
-        } catch (Exception e) {
-            // This will catch UsernameNotFoundException or BadCredentialsException
-            Nomenclature.warn(logger, Nomenclature.Action.UPDATE_SENSITIVE, request.getUsername());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Nomenclature.MSG_PASSWORD_CHANGE_FAILED + e.getMessage());
-        }
+            return ResponseEntity.ok(Nomenclature.MSG_PASSWORD_CHANGED); // TODO: Improve coverage for this line
     }
 }

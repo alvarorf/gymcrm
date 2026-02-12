@@ -1,7 +1,7 @@
 package com.gymcrm.dto;
 
 import com.gymcrm.model.TrainingType;
-import com.gymcrm.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

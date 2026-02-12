@@ -2,7 +2,7 @@ package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.model.Trainee;
-import com.gymcrm.security.CustomUserDetailsService;
+import com.gymcrm.core.security.CustomUserDetailsService;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;

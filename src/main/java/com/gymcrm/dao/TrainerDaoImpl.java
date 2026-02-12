@@ -3,7 +3,6 @@ package com.gymcrm.dao;
 import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.model.Trainer;
 import com.gymcrm.repositories.TrainerRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -14,15 +13,14 @@ import org.slf4j.Logger; // Simple Logging Facade for Java
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.gymcrm.util.Nomenclature;
-import com.gymcrm.util.Nomenclature.Action;
+import com.gymcrm.core.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature.Action;
 
 @Repository
 public class TrainerDaoImpl implements TrainerDao {
     private static final Logger logger = LoggerFactory.getLogger(TrainerDaoImpl.class);
     private final TrainerRepository trainerRepository;
 
-    @Autowired
     public TrainerDaoImpl(TrainerRepository trainerRepository) {
         this.trainerRepository = trainerRepository;
     }

@@ -1,9 +1,9 @@
 package com.gymcrm.service;
 
 import com.gymcrm.dao.interfaces.*;
-import com.gymcrm.security.CustomUserDetailsService;
+import com.gymcrm.core.security.CustomUserDetailsService;
 import com.gymcrm.service.interfaces.AuthService;
-import com.gymcrm.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature;
 import org.slf4j.*;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.security.authentication.*;
@@ -54,6 +54,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void changePassword(String username, String oldPassword, String newPassword) {
         Nomenclature.info(logger, Nomenclature.Action.UPDATE_SENSITIVE, username);
+
+        // We check this BEFORE expensive database/auth operations
+        if (oldPassword.equals(newPassword)) throw new IllegalArgumentException(Nomenclature.ERR.DETAIL_SAME_PASSWORD);
 
         // Authenticate the user with the old password
         // This will throw an AuthenticationException if the old password doesn't match

@@ -1,13 +1,12 @@
-package com.gymcrm.config;
+package com.gymcrm.core.config;
 
-import com.gymcrm.util.DataLoader;
-import com.gymcrm.util.Nomenclature;
-import com.gymcrm.util.Nomenclature.Action;
+import com.gymcrm.core.util.DataLoader;
+import com.gymcrm.core.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature.Action;
 import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
@@ -23,10 +22,8 @@ public class StorageInitializationPostProcessor implements BeanPostProcessor
     @Value("${storage.initial-data-file}")
     private String dataPath;
 
-    @Autowired
     private final DataLoader dataLoader;
 
-    @Autowired
     public StorageInitializationPostProcessor(DataLoader dataLoader) {
         this.dataLoader = dataLoader;
     }

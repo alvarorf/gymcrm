@@ -1,14 +1,13 @@
 package com.gymcrm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gymcrm.config.SecurityConfig;
-import com.gymcrm.config.logging.RestLoggingFilter;
-import com.gymcrm.config.logging.TransactionFilter;
+import com.gymcrm.core.config.SecurityConfig;
+import com.gymcrm.core.config.logging.RestLoggingFilter;
+import com.gymcrm.core.config.logging.TransactionFilter;
+import com.gymcrm.core.exception.TrainerControllerExceptionHandler;
 import com.gymcrm.dto.*;
-import com.gymcrm.exception.GlobalExceptionHandler;
 import com.gymcrm.service.interfaces.TrainerService;
 import com.gymcrm.service.interfaces.TrainingService;
-import com.gymcrm.util.Nomenclature;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +23,6 @@ import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Optional;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
@@ -33,7 +31,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(TrainerController.class)
-@Import({SecurityConfig.class, TransactionFilter.class, RestLoggingFilter.class, GlobalExceptionHandler.class})
+@Import({SecurityConfig.class, TransactionFilter.class, RestLoggingFilter.class, TrainerControllerExceptionHandler.class})
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL) // Replaces @Autowired for constructor injection in tests
 @DisplayName("Trainer Controller Unit Tests")
 class TrainerControllerTest {

@@ -3,11 +3,10 @@ package com.gymcrm.dao;
 import com.gymcrm.dao.interfaces.TraineeDao;
 import com.gymcrm.repositories.TraineeRepository;
 import com.gymcrm.model.Trainee;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
-import com.gymcrm.util.Nomenclature;
-import com.gymcrm.util.Nomenclature.Action;
+import com.gymcrm.core.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature.Action;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +21,6 @@ public class TraineeDaoImpl implements TraineeDao {
     private final TraineeRepository traineeRepository;
 
     // Req4: DAO with storage bean should be inserted into services beans using auto wiring.
-    @Autowired
     public TraineeDaoImpl(TraineeRepository traineeRepository) {
         this.traineeRepository = traineeRepository;
         Nomenclature.info(logger, Action.INITIALIZE);

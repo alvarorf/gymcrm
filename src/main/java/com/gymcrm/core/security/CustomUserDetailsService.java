@@ -1,8 +1,8 @@
-package com.gymcrm.security;
+package com.gymcrm.core.security;
 
 import com.gymcrm.mapper.UserMapper;
 import com.gymcrm.repositories.*;
-import com.gymcrm.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;

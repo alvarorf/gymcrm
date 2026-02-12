@@ -1,4 +1,4 @@
-package com.gymcrm.util;
+package com.gymcrm.core.util;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -6,7 +6,6 @@ import com.gymcrm.model.*;
 import com.gymcrm.repositories.*;
 import lombok.Data;
 import org.slf4j.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -25,7 +24,6 @@ public class DataLoader {
     private final TrainingTypeRepository trainingTypeRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
     public DataLoader(TraineeRepository traineeRepository,
                       TrainerRepository trainerRepository,
                       TrainingRepository trainingRepository,

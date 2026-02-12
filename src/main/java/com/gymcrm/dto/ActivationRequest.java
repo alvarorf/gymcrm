@@ -1,10 +1,14 @@
 package com.gymcrm.dto;
 
-import com.gymcrm.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature;
 import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor // Required for Jackson
+@AllArgsConstructor
 public class ActivationRequest {
     @NotBlank(message = Nomenclature.REQD.LAST_NAME)
     private String username;

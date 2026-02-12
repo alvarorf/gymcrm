@@ -1,6 +1,7 @@
 package com.gymcrm.config;
 
-import com.gymcrm.util.DataLoader;
+import com.gymcrm.core.config.StorageInitializationPostProcessor;
+import com.gymcrm.core.util.DataLoader;
 import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
