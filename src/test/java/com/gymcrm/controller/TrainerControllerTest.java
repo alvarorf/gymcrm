@@ -2,9 +2,10 @@ package com.gymcrm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymcrm.core.config.SecurityConfig;
-import com.gymcrm.core.config.logging.RestLoggingFilter;
-import com.gymcrm.core.config.logging.TransactionFilter;
+import com.gymcrm.core.logging.RestLoggingFilter;
+import com.gymcrm.core.logging.TransactionFilter;
 import com.gymcrm.core.exception.TrainerControllerExceptionHandler;
+import com.gymcrm.core.util.Nomenclature;
 import com.gymcrm.dto.*;
 import com.gymcrm.service.interfaces.TrainerService;
 import com.gymcrm.service.interfaces.TrainingService;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.hamcrest.Matchers.containsString;
 
 @WebMvcTest(TrainerController.class)
 @Import({SecurityConfig.class, TransactionFilter.class, RestLoggingFilter.class, TrainerControllerExceptionHandler.class})
@@ -114,7 +116,7 @@ class TrainerControllerTest {
                 .andExpect(status().isOk());
     }
 
-    // --- 3. TRAININGS (FIXED NPE) ---
+    // --- 3. TRAININGS ---
 
     @Test
     @WithMockUser
@@ -158,5 +160,147 @@ class TrainerControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("GET PROFILE FAIL: Should return 404 when trainer not found")
+    void getProfile_NotFound() throws Exception {
+        // ARRANGE
+        String username = "nonexistent.trainer";
+        String errorMsg = Nomenclature.getNotFoundMsg(username);
+        when(trainerService.selectTrainerProfile(username)).thenReturn(Optional.empty());
+
+        // ACT & ASSERT
+        mockMvc.perform(get("/api/trainers/{username}", username))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_NOT_FOUND))
+                .andExpect(jsonPath("$.message").value(errorMsg));
+    }
+
+    @Test
+    @DisplayName("REGISTER VALIDATION FAIL: Should return 400 when specialization is missing")
+    void register_ValidationFail() throws Exception {
+        // ARRANGE
+        // Missing specialization which is mandatory for Trainers
+        TrainerRegistrationRequest request = TrainerRegistrationRequest.builder()
+                .firstName("John").lastName("Doe")
+                .specialization(null)
+                .build();
+
+        // ACT & ASSERT
+        mockMvc.perform(post("/api/trainers/register")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_REG_FAILED));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("UPDATE VALIDATION FAIL: Should return 400 when username is blank")
+    void update_ValidationFail() throws Exception {
+        // ARRANGE
+        TrainerUpdateRequest request = TrainerUpdateRequest.builder()
+                .username("") // Blank username
+                .firstName("John").lastName("Doe")
+                .isActive(true).build();
+
+        // ACT & ASSERT
+        mockMvc.perform(put("/api/trainers")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_UPDATE_REFUSED));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("ACTIVATION VALIDATION FAIL: Should return 400 when isActive is null")
+    void toggleActivation_ValidationFail() throws Exception {
+        // ARRANGE
+        ActivationRequest request = new ActivationRequest();
+        request.setUsername("trainer.user");
+        request.setIsActive(null); // Triggers @NotNull
+
+        // ACT & ASSERT
+        mockMvc.perform(patch("/api/trainers/activation")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_TOGGLE_FAILED));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("TRAINING SEARCH FAIL: Should return 400 when service throws RuntimeException")
+    void getTrainerTrainings_SearchError() throws Exception {
+        // ARRANGE
+        String username = "trainer.user";
+        String exceptionMsg = "Invalid date range";
+        when(trainingService.getTrainerTrainings(eq(username), any(), any(), any()))
+                .thenThrow(new RuntimeException(exceptionMsg));
+
+        // ACT & ASSERT
+        mockMvc.perform(get("/api/trainers/{username}/trainings", username))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_PERSISTENCE))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString(exceptionMsg)));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("FAILURE: GET profile throws RuntimeException when user is not found")
+    void getProfile_NotFound_Exception() throws Exception {
+        // ARRANGE
+        String username = "unknown.trainer";
+        String expectedMessage = Nomenclature.getNotFoundMsg(username);
+        when(trainerService.selectTrainerProfile(username)).thenReturn(java.util.Optional.empty());
+
+        // ACT & ASSERT
+        mockMvc.perform(get("/api/trainers/{username}", username))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_NOT_FOUND))
+                .andExpect(jsonPath("$.message").value(expectedMessage));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("FAILURE: Training list retrieval fails due to service RuntimeException")
+    void getTrainerTrainings_InternalError() throws Exception {
+        // ARRANGE
+        String username = "trainer.user";
+        String internalMsg = "Database connection timed out";
+        when(trainingService.getTrainerTrainings(eq(username), any(), any(), any()))
+                .thenThrow(new RuntimeException(internalMsg));
+
+        // ACT & ASSERT
+        mockMvc.perform(get("/api/trainers/{username}/trainings", username))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_PERSISTENCE))
+                .andExpect(jsonPath("$.message", containsString(internalMsg)))
+                .andExpect(jsonPath("$.suggestion").value(Nomenclature.ERR.SUGGESTION_TRAINER_SEARCH));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("VALIDATION: Registration specialized response check")
+    void register_SpecializedValidation() throws Exception {
+        // ARRANGE
+        TrainerRegistrationRequest invalidRequest = TrainerRegistrationRequest.builder()
+                .firstName("") // Validation error
+                .build();
+
+        // ACT & ASSERT
+        mockMvc.perform(post("/api/trainers/register")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_REG_FAILED))
+                .andExpect(jsonPath("$.details").value(Nomenclature.ERR.DETAIL_TRAINER_SPEC));
     }
 }

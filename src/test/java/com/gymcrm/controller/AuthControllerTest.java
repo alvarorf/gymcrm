@@ -2,7 +2,8 @@ package com.gymcrm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymcrm.core.config.SecurityConfig;
-import com.gymcrm.core.config.logging.*;
+import com.gymcrm.core.logging.RestLoggingFilter;
+import com.gymcrm.core.logging.TransactionFilter;
 import com.gymcrm.dto.PasswordChangeRequest;
 import com.gymcrm.core.exception.AuthControllerExceptionHandler;
 import com.gymcrm.service.interfaces.AuthService;
@@ -13,9 +14,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.core.userdetails.*;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -50,7 +49,7 @@ class AuthControllerTest {
                         .param("username", "")
                         .param("password", ""))
                 .andExpect(status().isBadRequest()) // Now matches 400
-                .andExpect(jsonPath("$.message").value(Nomenclature.MSG_AUTH_REQUIRED))
+                .andExpect(jsonPath("$.message").value(Nomenclature.MSG.AUTH_REQUIRED))
                 .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_CREDENTIALS_INVALID));
     }
 
@@ -74,7 +73,7 @@ class AuthControllerTest {
     @DisplayName("LOGIN WRONG PASS: Should return 401 via BadCredentialsException")
     void login_WrongPassword() throws Exception {
         when(authService.authenticate(anyString(), anyString()))
-                .thenThrow(new BadCredentialsException(Nomenclature.MSG_INVALID_CREDENTIALS));
+                .thenThrow(new BadCredentialsException(Nomenclature.MSG.INVALID_CREDENTIALS));
 
         mockMvc.perform(post("/api/auth/login")
                         .with(csrf())
@@ -82,7 +81,7 @@ class AuthControllerTest {
                         .param("password", "wrong"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_CREDENTIALS_INVALID))
-                .andExpect(jsonPath("$.message").value(Nomenclature.MSG_INVALID_CREDENTIALS));
+                .andExpect(jsonPath("$.message").value(Nomenclature.MSG.INVALID_CREDENTIALS));
     }
 
     // --- CHANGE PASSWORD COVERAGE ---
@@ -138,9 +137,8 @@ class AuthControllerTest {
                         .param("username", "test.user")
                         .param("password", "correctPass"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(Nomenclature.MSG_LOGIN_SUCCESS));
+                .andExpect(content().string(Nomenclature.MSG.LOGIN_SUCCESS));
 
-        // This confirms the controller reached the TODO line
         verify(authService, times(1)).authenticate("test.user", "correctPass");
     }
 
@@ -158,9 +156,48 @@ class AuthControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
-                .andExpect(content().string(Nomenclature.MSG_PASSWORD_CHANGED));
+                .andExpect(content().string(Nomenclature.MSG.PASSWORD_CHANGED));
 
         // Verifies the service was called, proving the controller logic completed
         verify(authService, times(1)).changePassword("user", "old", "new");
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("PW CHANGE CONFLICT: Should return 409 and MSG.PASSWORD_CHANGE_FAILED")
+    void changePassword_ConflictMessageCheck() throws Exception {
+        // ARRANGE
+        PasswordChangeRequest request = new PasswordChangeRequest("user", "same", "same");
+        doThrow(new IllegalArgumentException(Nomenclature.ERR.DETAIL_SAME_PASSWORD))
+                .when(authService).changePassword(anyString(), anyString(), anyString());
+
+        // ACT & ASSERT
+        mockMvc.perform(put("/api/auth/change-password")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value(Nomenclature.MSG.PASSWORD_CHANGE_FAILED))
+                .andExpect(jsonPath("$.details").value(Nomenclature.ERR.DETAIL_SAME_PASSWORD));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("PW CHANGE RUNTIME: Should return 401 and MSG.PASSWORD_CHANGE_FAILED")
+    void changePassword_RuntimeMessageCheck() throws Exception {
+        // ARRANGE
+        PasswordChangeRequest request = new PasswordChangeRequest("user", "old", "new");
+        String technicalError = "Database timeout";
+        doThrow(new RuntimeException(technicalError))
+                .when(authService).changePassword(anyString(), anyString(), anyString());
+
+        // ACT & ASSERT
+        mockMvc.perform(put("/api/auth/change-password")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.message").value(Nomenclature.MSG.PASSWORD_CHANGE_FAILED))
+                .andExpect(jsonPath("$.technical_details").value(technicalError));
     }
 }

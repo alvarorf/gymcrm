@@ -30,13 +30,13 @@ public class AuthController {
 
         // Validation: If blank, throw to be caught by AuthControllerExceptionHandler
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
-            throw new BadCredentialsException(Nomenclature.MSG_AUTH_REQUIRED);
+            throw new BadCredentialsException(Nomenclature.MSG.AUTH_REQUIRED);
         }
 
         // authenticate() should throw UsernameNotFoundException or BadCredentialsException internally if it fails
         authService.authenticate(username, password);
 
-        return ResponseEntity.ok(Nomenclature.MSG_LOGIN_SUCCESS); // TODO: Improve coverage for this line
+        return ResponseEntity.ok(Nomenclature.MSG.LOGIN_SUCCESS);
 
     }
 
@@ -48,6 +48,6 @@ public class AuthController {
                     request.getOldPassword(),
                     request.getNewPassword()
             );
-            return ResponseEntity.ok(Nomenclature.MSG_PASSWORD_CHANGED); // TODO: Improve coverage for this line
+            return ResponseEntity.ok(Nomenclature.MSG.PASSWORD_CHANGED);
     }
 }

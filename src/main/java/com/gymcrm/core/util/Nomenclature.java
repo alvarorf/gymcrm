@@ -8,7 +8,7 @@ public final class Nomenclature {
 
     // --- Action keys
     public enum Action {
-        CREATE, UPDATE, DELETE, FETCH, AUTH, INITIALIZE, TOGGLE, UPDATE_SENSITIVE, SEED
+        CREATE, UPDATE, DELETE, FETCH, AUTH, INITIALIZE, TOGGLE, UPDATE_SENSITIVE, SEED, HEALTH_CHECK, METRICS_INIT
     }
 
     // --- Message templates (centralized) ---
@@ -16,22 +16,24 @@ public final class Nomenclature {
     private static final String OP_SUCCESS = "[{}] Successfully {} {}";
     private static final String CONSTRUCTOR_LOG = "[{}] Context initialized for {}";
 
-    // --- Dictionary (Easily changeable/translatable) ---
+    // --- Dictionary ---
     private static String getActionText(Action action, String methodName, Object... context) {
         return switch (action) {
+            case AUTH -> "authenticate";
             case CREATE -> "create";
-            case UPDATE -> "update";
             case DELETE -> "delete";
-            case SEED -> "seed database with initial data";
             case FETCH -> {
                 if (methodName.startsWith("findAll") || (context.length > 0 && "ALL".equals(context[0]))) {
                     yield "retrieve all records for";
                 }
                 yield "retrieve context for " + (context.length > 0 ? context[0] : "record");
             }
-            case AUTH -> "authenticate";
+            case HEALTH_CHECK -> "verify accessibility of " + (context.length > 0 ? context[0] : "resource");
             case INITIALIZE -> "initialize";
+            case METRICS_INIT -> "initialize micrometer registry for environment: " + (context.length > 0 ? context[0] : "unknown");
+            case SEED -> "seed database with initial data";
             case TOGGLE -> "change status to " + (context.length > 0 ? context[0] : "alternate");
+            case UPDATE -> "update";
             case UPDATE_SENSITIVE -> "update sensitive data (password) for " + (context.length > 0 ? context[0] : "user");
         };
     }
@@ -58,7 +60,13 @@ public final class Nomenclature {
     }
 
     public static final class ERR {
-        // Module & Field Headers
+
+        // Module & field headers
+        public static final String MODULE_TRAINING = "TRAINING_SERVICE";
+        public static final String TYPE_TRAINING_DENIED = "Training Creation Denied";
+        public static final String TYPE_INVALID_FORMAT = "Invalid Data Format";
+        public static final String TYPE_PERSISTENCE = "Persistence Error";
+
         public static final String MODULE_TRAINEE = "TRAINEE_SERVICE";
         public static final String MODULE_AUTH = "AUTH_SERVICE";
         public static final String KEY_DETAILS = "details";
@@ -66,15 +74,16 @@ public final class Nomenclature {
         public static final String KEY_MESSAGE = "message";
         public static final String KEY_ERR_TYPE = "error_type";
 
-        // Error Types
+        // Error types
         public static final String TYPE_INTERNAL = "Internal Server Error";
         public static final String TYPE_REG_FAILED = "Registration Failed";
         public static final String TYPE_UPDATE_REFUSED = "Update Refused";
         public static final String TYPE_TOGGLE_FAILED = "Activation Toggle Failed";
         public static final String TYPE_NOT_FOUND = "Profile Not Found";
         public static final String TYPE_DEL_FAILED = "Deletion Impossible";
+        public static final String TYPE_MALFORMED_JSON = "Malformed JSON";
 
-        // Auth Error Types
+        // Auth error types
         public static final String TYPE_AUTH_FAILED = "Authentication Denied";
         public static final String TYPE_CREDENTIALS_INVALID = "Invalid Credentials";
         public static final String TYPE_USER_NOT_FOUND = "User Identity Unknown";
@@ -83,30 +92,53 @@ public final class Nomenclature {
         // Detail Templates
         public static final String DETAIL_SAME_PASSWORD = "New password cannot be the same as the old password.";
         public static final String SUGGESTION_LOGIN = "Please check your username and password and try again.";
-
-        // Detail Templates
+        public static final String DETAIL_TRAINING_MISSING = "Mandatory session details are missing or empty.";
+        public static final String DETAIL_INCOMPATIBLE_TYPES = "The request body contains incompatible data types.";
         public static final String DETAIL_REG_MISSING = "Mandatory fields: %s and %s are missing or empty.";
         public static final String DETAIL_UPDATE_REQD = "Updating a trainee requires: %s and %s.";
         public static final String DETAIL_DEL_PREFIX = "Cannot delete trainee: ";
         public static final String SUGGESTION_VERIFY_NOMEN = "Please verify the Trainee nomenclature requirements.";
+
+        // Suggestions
+        public static final String SUGGESTION_TRAINING_REQD = "Ensure 'traineeUsername', 'trainerUsername', and 'trainingName' are provided.";
+        public static final String SUGGESTION_FORMAT = "Check if 'trainingDuration' is an Integer and 'trainingDate' follows 'YYYY-MM-DD'.";
+        public static final String SUGGESTION_USER_VERIFY = "Verify that both the Trainee and Trainer usernames exist in the database.";
+
+        // Trainer Specific Details/Suggestions
+        public static final String DETAIL_TRAINER_SPEC = "Specialization (Training Type) is mandatory for Trainers.";
+        public static final String SUGGESTION_TRAINER_SPEC = "Ensure 'specialization' object contains a valid 'trainingTypeName'.";
+        public static final String SUGGESTION_TRAINER_SEARCH = "Verify that the trainer username and date range are correct.";
+
+        // Generic keys
+        public static final String KEY_ERRORS = "errors";
+        public static final String KEY_TECHNICAL_ERROR = "technical_error";
     }
 
-    // --- Validation, response and server error messages ---
-    public static final String MSG_LOGIN_SUCCESS = "Login successful";
-    public static final String MSG_INVALID_CREDENTIALS = "Invalid credentials";
-    public static final String MSG_AUTH_FAILED = "Authentication failed: ";
-    public static final String MSG_AUTH_REQUIRED = "Username and password are required.";
-    public static final String MSG_PASSWORD_CHANGED = "Password changed successfully";
-    public static final String MSG_PASSWORD_CHANGE_FAILED = "Password change failed with errors"; // TODO: Use this in the AuthControllerExceptionHandler, add corresponding unit test (use @DisplayName and ARRANGE/ACT/ASSERT separately)
+    public static final class MSG {
+        // --- Validation, response and server error messages ---
+        public static final String LOGIN_SUCCESS = "Login successful";
+        public static final String INVALID_CREDENTIALS = "Invalid credentials";
+        public static final String AUTH_FAILED = "Authentication failed: ";
+        public static final String AUTH_REQUIRED = "Username and password are required.";
+        public static final String PASSWORD_CHANGED = "Password changed successfully";
+        public static final String PASSWORD_CHANGE_FAILED = "Password change failed with errors";
 
 
-    // --- Dictionary and Error Messages ---
-    public static final String MSG_INTERNAL_ERROR = "An unexpected error occurred. . Please try again later.";
-    public static final String MSG_NOT_FOUND = "Record not found for: ";
+        // --- Dictionary and error mssages ---
+        public static final String INTERNAL_ERROR = "An unexpected error occurred. . Please try again later.";
+        public static final String NOT_FOUND = "Record not found for: ";
+        public static final String SUGGESTION_MALFORMED = "Please ensure your JSON structure and data types are correct.";
+
+        // Health details
+        public static final String HEALTH_UP = "Seed data source is accessible";
+        public static final String HEALTH_DOWN = "Seed data file missing!";
+
+    }
 
 
 
-    // It can handle optional context (IDs, Usernames, Booleans)
+
+    // It can handle optional context (IDs, usernames, booleans)
     public static void info(Logger logger, Action action, Object... context) {
         if (logger.isInfoEnabled()) {
             StackWalker.StackFrame caller = getCallerFrame();
@@ -154,6 +186,6 @@ public final class Nomenclature {
         return clazz.getSimpleName() + " not found";
     }
 
-    public static String getNotFoundMsg(String identifier) { return MSG_NOT_FOUND + identifier;}
+    public static String getNotFoundMsg(String identifier) { return MSG.NOT_FOUND + identifier;}
 
 }

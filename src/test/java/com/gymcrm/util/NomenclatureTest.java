@@ -36,7 +36,7 @@ class NomenclatureTest {
         String result = Nomenclature.getNotFoundMsg("user123");
 
         // ASSERT
-        assertEquals(Nomenclature.MSG_NOT_FOUND + "user123", result);
+        assertEquals(Nomenclature.MSG.NOT_FOUND + "user123", result);
     }
 
     @Test

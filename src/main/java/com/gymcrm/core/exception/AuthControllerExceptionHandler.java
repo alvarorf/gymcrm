@@ -20,7 +20,7 @@ public class AuthControllerExceptionHandler {
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Map<String, String> errors = extractFieldErrors(ex);
         Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_AUTH_FAILED);
-        body.put(Nomenclature.ERR.KEY_DETAILS, Nomenclature.MSG_AUTH_REQUIRED);
+        body.put(Nomenclature.ERR.KEY_DETAILS, Nomenclature.MSG.AUTH_REQUIRED);
         body.put("validation_errors", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
@@ -29,7 +29,7 @@ public class AuthControllerExceptionHandler {
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
         // If the error message indicates missing input, return 400. Otherwise 401.
-        HttpStatus status = ex.getMessage().equals(Nomenclature.MSG_AUTH_REQUIRED)
+        HttpStatus status = ex.getMessage().equals(Nomenclature.MSG.AUTH_REQUIRED)
                 ? HttpStatus.BAD_REQUEST
                 : HttpStatus.UNAUTHORIZED;
 
@@ -52,6 +52,7 @@ public class AuthControllerExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArguments(IllegalArgumentException ex, HttpServletRequest request) {
         Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_SAME_PASSWORD);
+        body.put(Nomenclature.ERR.KEY_MESSAGE, Nomenclature.MSG.PASSWORD_CHANGE_FAILED);
         body.put(Nomenclature.ERR.KEY_DETAILS, ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
@@ -59,8 +60,9 @@ public class AuthControllerExceptionHandler {
     /** 5. Catch-all for auth runtime issues */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleGeneralAuthRuntime(RuntimeException ex, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, Nomenclature.MSG_AUTH_FAILED);
-        body.put(Nomenclature.ERR.KEY_MESSAGE, ex.getMessage());
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_AUTH_FAILED);
+        body.put(Nomenclature.ERR.KEY_MESSAGE, Nomenclature.MSG.PASSWORD_CHANGE_FAILED);
+        body.put("technical_details", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
     }
 

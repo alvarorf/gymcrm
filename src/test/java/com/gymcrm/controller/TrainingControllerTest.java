@@ -1,6 +1,7 @@
 package com.gymcrm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gymcrm.core.util.Nomenclature;
 import com.gymcrm.dto.TrainingCreateRequest;
 import com.gymcrm.service.interfaces.TrainingService;
 import org.junit.jupiter.api.*;
@@ -17,6 +18,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(TrainingController.class)
@@ -79,6 +81,74 @@ class TrainingControllerTest {
                 .andExpect(status().isBadRequest());
 
         verify(trainingService, never()).createProfile(any());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("EXCEPTION: Should return 422 when JSON contains malformed data types")
+    void addTraining_MalformedJson() throws Exception {
+        // ARRANGE
+        // Sending a string "sixty" instead of an integer 60 for duration
+        String malformedJson = """
+            {
+                "traineeUsername": "john.doe",
+                "trainerUsername": "coach.smith",
+                "trainingName": "Yoga",
+                "trainingDate": "2026-02-14",
+                "trainingDuration": "sixty"
+            }
+            """;
+
+        // ACT & ASSERT
+        mockMvc.perform(post("/api/trainings")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(malformedJson))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_INVALID_FORMAT))
+                .andExpect(jsonPath("$.details").value(Nomenclature.ERR.DETAIL_INCOMPATIBLE_TYPES));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("EXCEPTION: Should return 404 when service throws RuntimeException (User Not Found)")
+    void addTraining_UserNotFound() throws Exception {
+        // ARRANGE
+        TrainingCreateRequest request = createValidRequest();
+        String errorMessage = "Trainee not found";
+
+        // Mock service layer failure
+        doThrow(new RuntimeException(errorMessage))
+                .when(trainingService).createProfile(any(TrainingCreateRequest.class));
+
+        // ACT & ASSERT
+        mockMvc.perform(post("/api/trainings")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_PERSISTENCE))
+                .andExpect(jsonPath("$.message").value(errorMessage))
+                .andExpect(jsonPath("$.suggestion").value(Nomenclature.ERR.SUGGESTION_USER_VERIFY));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("VALIDATION: Should include specialized details on validation failure")
+    void addTraining_ValidationDetails() throws Exception {
+        // ARRANGE
+        TrainingCreateRequest request = createValidRequest();
+        request.setTrainingName(null);
+
+        // ACT & ASSERT
+        mockMvc.perform(post("/api/trainings")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_TRAINING_DENIED))
+                .andExpect(jsonPath("$.details").value(Nomenclature.ERR.DETAIL_TRAINING_MISSING))
+                .andExpect(jsonPath("$.suggestion").value(Nomenclature.ERR.SUGGESTION_TRAINING_REQD));
     }
 
     // Helper method to keep tests DRY

@@ -1,0 +1,27 @@
+{
+  "trainingTypes": [
+    { "id": 1, "trainingTypeName": "Fitness-Dev" },
+    { "id": 2, "trainingTypeName": "Strength-Dev" },
+    { "id": 3, "trainingTypeName": "Yoga-Dev" },
+    { "id": 4, "trainingTypeName": "Zumba-Dev" }
+  ],
+  "trainers": [
+    { "userId": 101, "firstName": "Michael-Dev", "lastName": "Scott", "username": "michael-dev", "password": "pass-dev", "isActive": true, "specialization": { "id": 1, "trainingTypeName": "Fitness-Dev" } },
+    { "userId": 102, "firstName": "Dwight-Dev", "lastName": "Schrute", "username": "dwight-dev", "password": "pass-dev", "isActive": true, "specialization": { "id": 2, "trainingTypeName": "Strength-Dev" } },
+    { "userId": 103, "firstName": "Jim-Dev", "lastName": "Halpert", "username": "jim-dev", "password": "pass-dev", "isActive": true, "specialization": { "id": 3, "trainingTypeName": "Yoga-Dev" } },
+    { "userId": 104, "firstName": "Andy-Dev", "lastName": "Bernard", "username": "andy-dev", "password": "pass-dev", "isActive": true, "specialization": { "id": 4, "trainingTypeName": "Zumba-Dev" } },
+    { "userId": 105, "firstName": "Stanley-Dev", "lastName": "Hudson", "username": "stanley-dev", "password": "pass-dev", "isActive": false, "specialization": { "id": 1, "trainingTypeName": "Fitness-Dev" } }
+  ],
+  "trainees": [
+    { "userId": 201, "firstName": "Pam-Dev", "lastName": "Beesly", "username": "pam-dev", "password": "pass-dev", "isActive": true, "address": "Scranton-Dev" },
+    { "userId": 202, "firstName": "Ryan-Dev", "lastName": "Howard", "username": "ryan-dev", "password": "pass-dev", "isActive": true, "address": "NYC-Dev" },
+    { "userId": 203, "firstName": "Kelly-Dev", "lastName": "Kapoor", "username": "kelly-dev", "password": "pass-dev", "isActive": true, "address": "Scranton-Dev" },
+    { "userId": 204, "firstName": "Toby-Dev", "lastName": "Flenderson", "username": "toby-dev", "password": "pass-dev", "isActive": false, "address": "Annex-Dev" },
+    { "userId": 205, "firstName": "Creed-Dev", "lastName": "Bratton", "username": "creed-dev", "password": "pass-dev", "isActive": true, "address": "Unknown-Dev" }
+  ],
+  "trainings": [
+    { "id": 901, "trainingName": "Sprint-Dev-1", "trainingDate": "2026-01-01", "trainingDuration": 30, "trainingType": { "id": 1, "trainingTypeName": "Fitness-Dev" } },
+    { "id": 902, "trainingName": "Sprint-Dev-2", "trainingDate": "2026-01-02", "trainingDuration": 45, "trainingType": { "id": 2, "trainingTypeName": "Strength-Dev" } },
+    { "id": 903, "trainingName": "Sprint-Dev-3", "trainingDate": "2026-01-03", "trainingDuration": 60, "trainingType": { "id": 3, "trainingTypeName": "Yoga-Dev" } }
+  ]
+}

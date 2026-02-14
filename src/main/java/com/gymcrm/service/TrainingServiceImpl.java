@@ -1,5 +1,6 @@
 package com.gymcrm.service;
 
+import com.gymcrm.core.health.TrainingMetricsService;
 import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.dto.*;
 import com.gymcrm.mapper.TrainingMapper;
@@ -27,6 +28,7 @@ public class TrainingServiceImpl implements TrainingService {
     @Setter private TraineeDao traineeDao;
     @Setter private TrainerDao trainerDao;
     @Setter private TrainingMapper trainingMapper;
+    @Setter private TrainingMetricsService trainingMetricsService;
 
     public TrainingServiceImpl(TrainingDao trainingDao) {
         this.trainingDao = trainingDao;
@@ -48,7 +50,6 @@ public class TrainingServiceImpl implements TrainingService {
     public void createProfile(TrainingCreateRequest request) {
         Nomenclature.info(logger, Action.CREATE, request.getTrainingName());
 
-        // Logic moved from Controller to Service
         Trainee trainee = traineeDao.findByUsername(request.getTraineeUsername())
                 .orElseThrow(() -> new RuntimeException(Nomenclature.getNotFoundMsg(request.getTraineeUsername())));
 
@@ -58,6 +59,8 @@ public class TrainingServiceImpl implements TrainingService {
         Training training = trainingMapper.toEntity(trainee, trainer, request);
         trainingDao.save(training);
 
+        // Update metric
+        trainingMetricsService.incrementTrainingCount();
         Nomenclature.success(logger, Action.CREATE, request.getTrainingName());
     }
 

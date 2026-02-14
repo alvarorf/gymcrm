@@ -52,7 +52,7 @@ class TraineeServiceImplTest {
     @Test
     @DisplayName("CREATE: Should use builder to create request and return credentials")
     void createProfile_Success() {
-        // ARRANGE - Fixed using Builder
+        // ARRANGE
         TraineeRegistrationRequest request = TraineeRegistrationRequest.builder()
                 .firstName("John")
                 .lastName("Doe")

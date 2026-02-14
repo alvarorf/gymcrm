@@ -7,8 +7,9 @@ import jakarta.persistence.EntityManagerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -16,16 +17,12 @@ public class StorageInitializationPostProcessor implements BeanPostProcessor
 {
     private static final Logger logger = LoggerFactory.getLogger(StorageInitializationPostProcessor.class);
 
-    // Inject the path from property file.
-    // Spring reads application.properties, finds the key, and sets the String value (dataPath) here,
-    // to be equal to storage.initial-data-file
-    @Value("${storage.initial-data-file}")
-    private String dataPath;
-
     private final DataLoader dataLoader;
+    private final Environment env;
 
-    public StorageInitializationPostProcessor(DataLoader dataLoader) {
+    public StorageInitializationPostProcessor(@Lazy DataLoader dataLoader, Environment env) {
         this.dataLoader = dataLoader;
+        this.env = env;
     }
 
     /**
@@ -34,13 +31,18 @@ public class StorageInitializationPostProcessor implements BeanPostProcessor
      */
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-        // Intercept the EntityManagerFactory to trigger DB seeding (after the EntityManager is ready)
         if (bean instanceof EntityManagerFactory) {
-            Nomenclature.info(logger, Action.SEED);
-            dataLoader.loadInitialData(dataPath);
-            Nomenclature.success(logger, Action.SEED, "Global Load");
-        }
+            // Fetch property from Environment at runtime instead of @Value at injection time
+            String dataPath = env.getProperty("storage.initial-data-file");
 
+            if (dataPath != null) {
+                Nomenclature.info(logger, Action.SEED);
+                dataLoader.loadInitialData(dataPath);
+                Nomenclature.success(logger, Action.SEED, "Global Load: " + dataPath);
+            } else {
+                logger.warn("Property 'storage.initial-data-file' not found in current profile.");
+            }
+        }
         return bean;
     }
 

@@ -37,7 +37,7 @@ class GymFacadeTest {
         String user = "john.doe";
         String pass = "secret";
 
-        // Fix: authenticate returns UserDetails, not boolean
+        // Authenticate returns UserDetails
         UserDetails mockUser = new User(user, pass, Collections.emptyList());
         when(authService.authenticate(user, pass)).thenReturn(mockUser);
 
@@ -56,7 +56,7 @@ class GymFacadeTest {
         String user = "wrong.user";
         String pass = "wrong.pass";
 
-        // Fix: Facade catches this specific exception to return false
+        // Facade catches this specific exception to return false
         when(authService.authenticate(user, pass))
                 .thenThrow(new UsernameNotFoundException("User not found"));
 

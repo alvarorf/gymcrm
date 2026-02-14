@@ -1,0 +1,20 @@
+{
+  "trainingTypes": [
+    { "id": 1, "trainingTypeName": "Cardio-Prod" },
+    { "id": 2, "trainingTypeName": "Weightlifting-Prod" },
+    { "id": 3, "trainingTypeName": "Pilates-Prod" },
+    { "id": 4, "trainingTypeName": "Boxing-Prod" },
+    { "id": 5, "trainingTypeName": "Swimming-Prod" },
+    { "id": 6, "trainingTypeName": "Crossfit-Prod" }
+  ],
+  "trainers": [
+    { "userId": 501, "firstName": "Chief-Prod", "lastName": "Instructor", "username": "admin-trainer-prod", "password": "PROD-SECURE-1", "isActive": true, "specialization": { "id": 1, "trainingTypeName": "Cardio-Prod" } },
+    { "userId": 502, "firstName": "Senior-Prod", "lastName": "Coach", "username": "senior-coach-prod", "password": "PROD-SECURE-2", "isActive": true, "specialization": { "id": 2, "trainingTypeName": "Weightlifting-Prod" } },
+    { "userId": 503, "firstName": "Wellness-Prod", "lastName": "Lead", "username": "wellness-lead-prod", "password": "PROD-SECURE-3", "isActive": true, "specialization": { "id": 3, "trainingTypeName": "Pilates-Prod" } }
+  ],
+  "trainees": [
+    { "userId": 601, "firstName": "Founding-Prod", "lastName": "Member", "username": "founder-trainee-prod", "password": "PROD-USER-PWD-1", "isActive": true, "dateOfBirth": "1980-01-01", "address": "HQ-Prod-Building" },
+    { "userId": 602, "firstName": "VIP-Prod", "lastName": "Client", "username": "vip-client-prod", "password": "PROD-USER-PWD-2", "isActive": true, "dateOfBirth": "1985-06-15", "address": "Elite-Prod-Suite" }
+  ],
+  "trainings": []
+}

@@ -1,13 +1,12 @@
-package com.gymcrm.config;
+package com.gymcrm.core.config;
 
-import com.gymcrm.core.config.StorageInitializationPostProcessor;
 import com.gymcrm.core.util.DataLoader;
 import jakarta.persistence.EntityManagerFactory;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.core.env.Environment;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.*;
@@ -19,29 +18,29 @@ class StorageInitializationPostProcessorTest {
     private DataLoader dataLoader;
 
     @Mock
+    private Environment env; // Mock the Environment instead of using Reflection
+
+    @Mock
     private EntityManagerFactory entityManagerFactory;
 
     @InjectMocks
     private StorageInitializationPostProcessor postProcessor;
 
-    private final String testPath = "test-data.json";
-
-    @BeforeEach
-    void setUp() {
-        // ARRANGE: Set the private @Value field using ReflectionTestUtils
-        ReflectionTestUtils.setField(postProcessor, "dataPath", testPath);
-    }
+    private final String testPath = "initial-data/initial-dev-data.json";
 
     @Test
     @DisplayName("1. INITIALIZE: Should trigger data load when bean is EntityManagerFactory")
     void shouldTriggerLoadingWhenEntityManagerFactoryDetected() {
         // ARRANGE
         String beanName = "entityManagerFactory";
+        // Stub the environment to return our test path
+        when(env.getProperty("storage.initial-data-file")).thenReturn(testPath);
 
         // ACT
         Object result = postProcessor.postProcessBeforeInitialization(entityManagerFactory, beanName);
 
         // ASSERT
+        verify(env).getProperty("storage.initial-data-file");
         verify(dataLoader, times(1)).loadInitialData(testPath);
         assertSame(entityManagerFactory, result, "The post-processor should return the bean unmodified.");
     }
@@ -57,8 +56,10 @@ class StorageInitializationPostProcessorTest {
         Object result = postProcessor.postProcessBeforeInitialization(regularBean, beanName);
 
         // ASSERT
+        // Should not even check the environment if it's not an EntityManagerFactory
+        verifyNoInteractions(env);
         verify(dataLoader, never()).loadInitialData(anyString());
-        assertSame(regularBean, result, "The post-processor should return the bean unmodified.");
+        assertSame(regularBean, result);
     }
 
     @Test
@@ -72,6 +73,7 @@ class StorageInitializationPostProcessorTest {
 
         // ASSERT
         verifyNoInteractions(dataLoader);
+        verifyNoInteractions(env);
         assertSame(bean, result);
     }
 }

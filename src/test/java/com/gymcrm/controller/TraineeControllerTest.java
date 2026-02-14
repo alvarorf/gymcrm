@@ -2,7 +2,8 @@ package com.gymcrm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymcrm.core.config.SecurityConfig;
-import com.gymcrm.core.config.logging.*;
+import com.gymcrm.core.logging.RestLoggingFilter;
+import com.gymcrm.core.logging.TransactionFilter;
 import com.gymcrm.dto.*;
 import com.gymcrm.core.exception.TraineeControllerExceptionHandler;
 import com.gymcrm.service.interfaces.*;
@@ -178,5 +179,187 @@ class TraineeControllerTest {
         mockMvc.perform(get("/api/trainees/{username}/unassigned-trainers", user))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].username").value("john.pro"));
+    }
+
+    // --- EXCEPTION HANDLER TESTS ---
+
+    @Test
+    @DisplayName("VALIDATION FAIL: Should return 400 when registration fields are missing")
+    void register_ValidationFailure() throws Exception {
+        // ARRANGE
+        // Missing firstName and lastName to trigger @NotBlank validation
+        TraineeRegistrationRequest invalidRequest = TraineeRegistrationRequest.builder()
+                .firstName("")
+                .lastName(null)
+                .build();
+
+        // ACT & ASSERT
+        mockMvc.perform(post("/api/trainees/register")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_REG_FAILED))
+                .andExpect(jsonPath("$.module").value(Nomenclature.ERR.MODULE_TRAINEE))
+                .andExpect(jsonPath("$.validation_errors.firstName").value(Nomenclature.REQD.FIRST_NAME))
+                .andExpect(jsonPath("$.validation_errors.lastName").value(Nomenclature.REQD.LAST_NAME));
+    }
+
+    @Test
+    @DisplayName("MALFORMED JSON: Should return 400 when JSON structure is invalid")
+    void anyEndpoint_MalformedJson() throws Exception {
+        // ARRANGE
+        String malformedJson = "{ \"firstName\": \"John\", \"lastName\": }"; // Missing value
+
+        // ACT & ASSERT
+        mockMvc.perform(post("/api/trainees/register")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(malformedJson))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_MALFORMED_JSON))
+                .andExpect(jsonPath("$.suggestion").value(Nomenclature.MSG.SUGGESTION_MALFORMED))
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("RUNTIME EXCEPTION (DELETE): Should return 404 with Deletion Impossible error type")
+    void delete_RuntimeException_Mapping() throws Exception {
+        // ARRANGE
+        String user = "alice.smith";
+        String errorMessage = "Database constraint violation";
+        doThrow(new RuntimeException(errorMessage)).when(traineeService).deleteProfile(user);
+
+        // ACT & ASSERT
+        mockMvc.perform(delete("/api/trainees/{username}", user).with(csrf()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_DEL_FAILED))
+                .andExpect(jsonPath("$.message").value(errorMessage));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("RUNTIME EXCEPTION (PATCH): Should return 400 with Toggle Failed error type")
+    void toggle_RuntimeException_Mapping() throws Exception {
+        // ARRANGE
+        ActivationRequest request = new ActivationRequest("alice.smith", true);
+        String errorMessage = "Profile is already active";
+        doThrow(new RuntimeException(errorMessage)).when(traineeService).toggleActivation(anyString());
+
+        // ACT & ASSERT
+        mockMvc.perform(patch("/api/trainees/activation")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_TOGGLE_FAILED))
+                .andExpect(jsonPath("$.message").value(errorMessage));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("GENERAL EXCEPTION: Should return 500 for unhandled checked exceptions")
+    void generalException_Fallback() throws Exception {
+        // ARRANGE
+        // Force a non-RuntimeException to trigger handleGeneralException
+        when(trainerService.getUnassignedActiveTrainersByTraineeUsername(anyString()))
+                .thenAnswer(invocation -> { throw new Exception("Unexpected System Error"); });
+
+        // ACT & ASSERT
+        mockMvc.perform(get("/api/trainees/alice.smith/unassigned-trainers"))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_INTERNAL))
+                .andExpect(jsonPath("$.message").value(Nomenclature.MSG.INTERNAL_ERROR));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("UPDATE VALIDATION FAIL: Should return 400 when username or status is missing")
+    void update_ValidationFailure() throws Exception {
+        // ARRANGE
+        // Missing username and isActive (both required for updates per Nomenclature)
+        TraineeUpdateRequest invalidRequest = TraineeUpdateRequest.builder()
+                .firstName("Alice")
+                .lastName("Smith")
+                .build();
+
+        // ACT & ASSERT
+        mockMvc.perform(put("/api/trainees")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_UPDATE_REFUSED)) // Default validation error type
+                .andExpect(jsonPath("$.validation_errors.username").value(Nomenclature.REQD.USERNAME))
+                .andExpect(jsonPath("$.validation_errors.isActive").value(Nomenclature.REQD.IS_ACTIVE));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("PATCH VALIDATION FAIL: Should return 400 when activation status is null")
+    void toggleActivation_ValidationFailure() throws Exception {
+        // ARRANGE
+        // Sending a request with a null isActive field
+        ActivationRequest invalidRequest = new ActivationRequest("alice.smith", null);
+
+        // ACT & ASSERT
+        mockMvc.perform(patch("/api/trainees/activation")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.validation_errors.isActive").value(Nomenclature.REQD.IS_ACTIVE));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("RUNTIME EXCEPTION (GET): Should return 404 with Profile Not Found error type")
+    void getProfile_RuntimeException_Mapping() throws Exception {
+        // ARRANGE
+        String user = "alice.smith";
+        String errorMessage = Nomenclature.getNotFoundMsg(user);
+        when(traineeService.selectTraineeProfile(user)).thenThrow(new RuntimeException(errorMessage));
+
+        // ACT & ASSERT
+        mockMvc.perform(get("/api/trainees/{username}", user))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_NOT_FOUND))
+                .andExpect(jsonPath("$.message").value(errorMessage));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("RUNTIME EXCEPTION (UNKNOWN PATH): Should return 404 with Internal Error fallback")
+    void unmappedMethod_RuntimeException_Fallback() throws Exception {
+        // ARRANGE
+        // Simulating a RuntimeException on a method/path combo not explicitly handled in handleRuntime if/else
+        when(trainerService.getUnassignedActiveTrainersByTraineeUsername(anyString()))
+                .thenThrow(new RuntimeException("Unexpected Database Error"));
+
+        // ACT & ASSERT
+        mockMvc.perform(get("/api/trainees/alice.smith/unassigned-trainers"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_NOT_FOUND)) // GET defaults to TYPE_NOT_FOUND in your handler
+                .andExpect(jsonPath("$.message").value("Unexpected Database Error"));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("PATCH VALIDATION: Should use specialized handlePatchActivationValidation response")
+    void toggle_SpecializedValidation_ReturnsToggleFailed() throws Exception {
+        // ARRANGE
+        ActivationRequest invalidRequest = new ActivationRequest("alice.smith", null);
+
+        // ACT & ASSERT
+        mockMvc.perform(patch("/api/trainees/activation")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidRequest)))
+                .andExpect(status().isBadRequest())
+                // Verify the specialized handler was used
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_TOGGLE_FAILED))
+                .andExpect(jsonPath("$.details").value(Nomenclature.REQD.IS_ACTIVE))
+                .andExpect(jsonPath("$.validation_errors.isActive").value(Nomenclature.REQD.IS_ACTIVE));
     }
 }

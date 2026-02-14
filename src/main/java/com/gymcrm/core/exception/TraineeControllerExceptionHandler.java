@@ -15,119 +15,114 @@ import java.util.*;
 @RestControllerAdvice(assignableTypes = TraineeController.class)
 public class TraineeControllerExceptionHandler {
 
-    // --- Entry points (delegators) ---
+    // --- 1. VALIDATION ENTRY POINT ---
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
 
-        // Ensure the path is exactly what the test expects
-        Map<String, Object> body = new LinkedHashMap<>(); // Use LinkedHashMap for predictable order
-        body.put("timestamp", LocalDateTime.now().toString());
-        body.put("path", request.getRequestURI());
-        body.put("error_type", Nomenclature.ERR.TYPE_REG_FAILED);
-        body.put("module", Nomenclature.ERR.MODULE_TRAINEE);
+        String method = request.getMethod();
+        String path = request.getRequestURI();
+        Map<String, String> errors = extractFieldErrors(ex);
 
-        Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
+        // Routing based on the endpoint context for validation errors
+        if ("PUT".equalsIgnoreCase(method)) {
+            return handlePutUpdateValidation(errors, request);
+        } else if ("PATCH".equalsIgnoreCase(method) && path.contains("/activation")) {
+            return handlePatchActivationValidation(errors, request);
+        } else if ("POST".equalsIgnoreCase(method) && path.contains("/register")) {
+            return handlePostRegistrationValidation(errors, request);
+        }
+
+        // Fallback for generic validation errors
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_REG_FAILED);
         body.put("validation_errors", errors);
-
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
+
+    // --- 2. BUSINESS LOGIC ENTRY POINT ---
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntime(RuntimeException ex, HttpServletRequest request) {
         String method = request.getMethod();
-        String path = request.getRequestURI();
 
-        // Determine error type based on Method and Path
-        String errorType = Nomenclature.ERR.TYPE_INTERNAL;
-        HttpStatus status = HttpStatus.NOT_FOUND;
-
+        // Routing based on method for business exceptions (e.g. "Not Found" or "Deletion Failed")
         if ("GET".equalsIgnoreCase(method)) {
-            errorType = Nomenclature.ERR.TYPE_NOT_FOUND;
+            return handleGetProfileNotFound(ex, request);
         } else if ("DELETE".equalsIgnoreCase(method)) {
-            errorType = Nomenclature.ERR.TYPE_DEL_FAILED;
-        } else if ("PATCH".equalsIgnoreCase(method) && path.contains("/activation")) {
+            return handleDeleteResourceNotFound(ex, request);
+        }
+
+        // Default handler for logic failures (like toggle activation logic)
+        String errorType = Nomenclature.ERR.TYPE_INTERNAL;
+        if (request.getRequestURI().contains("/activation")) {
             errorType = Nomenclature.ERR.TYPE_TOGGLE_FAILED;
-            status = HttpStatus.BAD_REQUEST;
         }
 
         Map<String, Object> body = createBaseBody(request, errorType);
         body.put(Nomenclature.ERR.KEY_MESSAGE, ex.getMessage());
-
-        return ResponseEntity.status(status).body(body);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
+
+    // --- 3. OTHER EXCEPTIONS ---
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleMalformedJson(HttpMessageNotReadableException ex, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Malformed JSON");
-        body.put("error", ex.getMessage());
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_MALFORMED_JSON);
+        body.put(Nomenclature.ERR.KEY_MESSAGE, ex.getMostSpecificCause().getMessage());
+        body.put(Nomenclature.ERR.KEY_SUGGESTION, Nomenclature.MSG.SUGGESTION_MALFORMED);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    /** Fallback for unexpected internal server errors */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> handleGeneralException(Exception ex, HttpServletRequest request) {
         Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_INTERNAL);
-        body.put(Nomenclature.ERR.KEY_MESSAGE, Nomenclature.MSG_INTERNAL_ERROR);
-        // Log the exception for debugging
+        body.put(Nomenclature.ERR.KEY_MESSAGE, Nomenclature.MSG.INTERNAL_ERROR);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
-    // --- Handler methods ---
+    // --- PRIVATE HANDLER METHODS (Specialized Responses) ---
 
-    /** POST: Robust Validation for Registration */
     private ResponseEntity<Map<String, Object>> handlePostRegistrationValidation(Map<String, String> errors, HttpServletRequest request) {
-        // 1. Initialize the map with base fields (timestamp, path, error_type, module)
-        Map<String, Object> body = createBaseBody(request, "Registration Failed");
-
-        // 2. Add the specific details and validation errors
-        body.put("details", String.format("Mandatory fields: %s and %s are missing or empty.",
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_REG_FAILED);
+        body.put("details", String.format(Nomenclature.ERR.DETAIL_REG_MISSING,
                 Nomenclature.REQD.FIRST_NAME, Nomenclature.REQD.LAST_NAME));
         body.put("validation_errors", errors);
-        body.put("suggestion", "Please verify the Trainee nomenclature requirements.");
-
+        body.put("suggestion", Nomenclature.ERR.SUGGESTION_VERIFY_NOMEN);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    /** PUT: Validation for Profile Updates */
     private ResponseEntity<Map<String, Object>> handlePutUpdateValidation(Map<String, String> errors, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Update Refused");
-        body.put("details", String.format("Updating a trainee requires: %s and %s.",
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_UPDATE_REFUSED);
+        body.put("details", String.format(Nomenclature.ERR.DETAIL_UPDATE_REQD,
                 Nomenclature.REQD.USERNAME, Nomenclature.REQD.IS_ACTIVE));
         body.put("validation_errors", errors);
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body); // TODO: Expand coverage for this method
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    /** PATCH: Specific Validation for Activation Toggles */
     private ResponseEntity<Map<String, Object>> handlePatchActivationValidation(Map<String, String> errors, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Activation Toggle Failed");
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_TOGGLE_FAILED);
         body.put("details", Nomenclature.REQD.IS_ACTIVE);
         body.put("validation_errors", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
-    } // TODO: Expand coverage for this method
-
-    /** GET: Handling Missing Profiles */
-    private ResponseEntity<Map<String, Object>> handleGetProfileNotFound(RuntimeException ex, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Profile Not Found");
-        body.put("message", ex.getMessage()); // Usually already formatted by Nomenclature.getNotFoundMsg in service
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
-    } // TODO: Expand coverage for this method
-
-    /** DELETE: Handling Deletion failures */
-    private ResponseEntity<Map<String, Object>> handleDeleteResourceNotFound(RuntimeException ex, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Deletion Impossible");
-        body.put("message", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body); // TODO: Expand coverage for this method
     }
 
-    // --- UTILS & FALLBACKS ---
+    private ResponseEntity<Map<String, Object>> handleGetProfileNotFound(RuntimeException ex, HttpServletRequest request) {
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_NOT_FOUND);
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+    private ResponseEntity<Map<String, Object>> handleDeleteResourceNotFound(RuntimeException ex, HttpServletRequest request) {
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_DEL_FAILED);
+        body.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+    // --- UTILS ---
 
     private Map<String, Object> createBaseBody(HttpServletRequest request, String errorType) {
-        Map<String, Object> body = new HashMap<>();
+        Map<String, Object> body = new LinkedHashMap<>(); // Use LinkedHashMap for ordered JSON output
         body.put("timestamp", LocalDateTime.now().toString());
         body.put("path", request.getRequestURI());
         body.put("error_type", errorType);
@@ -141,13 +136,4 @@ public class TraineeControllerExceptionHandler {
                 fieldErrors.put(error.getField(), error.getDefaultMessage()));
         return fieldErrors;
     }
-
-    private ResponseEntity<Map<String, Object>> handleGenericValidation(Map<String, String> errors, HttpServletRequest request) {
-        return ResponseEntity.badRequest().body(Map.of("errors", errors));
-    }
-
-    private ResponseEntity<Map<String, Object>> handleGenericRuntimeError(RuntimeException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", Nomenclature.MSG_INTERNAL_ERROR));
-    }
-
 }

@@ -1,6 +1,7 @@
 package com.gymcrm.core.exception;
 
 import com.gymcrm.controller.TrainingController;
+import com.gymcrm.core.util.Nomenclature;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.*;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -16,21 +17,21 @@ public class TrainingControllerExceptionHandler {
 
     // --- Delegators (entry points) ---
 
-    /** Handle @Valid failures (Empty fields, Blank strings) */
+    /** Handle @Valid failures (empty fields, blank strings) */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
         Map<String, String> errors = extractFieldErrors(ex);
-        // TrainingController currently only has POST, so we delegate directly to robust POST logic
+        // TrainingController currently only has POST, so we delegate to POST logic
         return handlePostTrainingValidation(errors, request);
     }
 
-    /** Handle Incorrect Data Types (e.g., sending "abc" for Duration/Date) or Malformed JSON */
+    /** Handle incorrect data types (e.g., sending "abc" for duration/date) or malformed JSON */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, Object>> handleSerializationError(HttpMessageNotReadableException ex, HttpServletRequest request) {
         return handleIncorrectDataTypes(ex, request);
     }
 
-    /** Handle Service Layer logic errors (e.g., Trainee/Trainer username not found) */
+    /** Handle service layer logic errors (e.g., trainee/trainer username not found) */
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntime(RuntimeException ex, HttpServletRequest request) {
         return handleTrainingBusinessLogicError(ex, request);
@@ -39,29 +40,29 @@ public class TrainingControllerExceptionHandler {
     // --- Handler methods ---
 
 
-    /** POST: Robust Validation for Training Creation */
+    /** POST: Robust validation for training creation */
     private ResponseEntity<Map<String, Object>> handlePostTrainingValidation(Map<String, String> errors, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Training Creation Denied");
-        body.put("details", "Mandatory session details are missing or empty.");
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_TRAINING_DENIED);
+        body.put(Nomenclature.ERR.KEY_DETAILS, Nomenclature.ERR.DETAIL_TRAINING_MISSING);
         body.put("validation_errors", errors);
-        body.put("suggestion", "Ensure 'traineeUsername', 'trainerUsername', and 'trainingName' are provided.");
+        body.put(Nomenclature.ERR.KEY_SUGGESTION, Nomenclature.ERR.SUGGESTION_TRAINING_REQD);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
-    /** Specific Handler for Type Mismatches (String vs Integer/Date) */
+    /** Specific Handler for type mismatches (String vs Integer/Date) */
     private ResponseEntity<Map<String, Object>> handleIncorrectDataTypes(HttpMessageNotReadableException ex, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Invalid Data Format");
-        body.put("details", "The request body contains incompatible data types.");
-        body.put("message", "Check if 'trainingDuration' is an Integer and 'trainingDate' follows 'YYYY-MM-DD'.");
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_INVALID_FORMAT);
+        body.put(Nomenclature.ERR.KEY_DETAILS, Nomenclature.ERR.DETAIL_INCOMPATIBLE_TYPES);
+        body.put(Nomenclature.ERR.KEY_MESSAGE, Nomenclature.ERR.SUGGESTION_FORMAT);
         body.put("technical_error", ex.getMostSpecificCause().getMessage());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
     }
 
-    /** GET/POST: Business Logic failures (e.g., Usernames not found) */
+    /** GET/POST: Business logic failures (e.g., usernames not found) */
     private ResponseEntity<Map<String, Object>> handleTrainingBusinessLogicError(RuntimeException ex, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Persistence Error");
-        body.put("message", ex.getMessage());
-        body.put("suggestion", "Verify that both the Trainee and Trainer usernames exist in the database.");
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_PERSISTENCE);
+        body.put(Nomenclature.ERR.KEY_MESSAGE, ex.getMessage());
+        body.put(Nomenclature.ERR.KEY_SUGGESTION, Nomenclature.ERR.SUGGESTION_USER_VERIFY);
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
@@ -69,10 +70,10 @@ public class TrainingControllerExceptionHandler {
 
     private Map<String, Object> createBaseBody(HttpServletRequest request, String errorType) {
         Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("path", request.getRequestURI());
-        body.put("error_type", errorType);
-        body.put("module", "TRAINING_SERVICE");
+        body.put(Nomenclature.ERR.KEY_ERR_TYPE, errorType);
+        body.put("module", Nomenclature.ERR.MODULE_TRAINING);
         return body;
     }
 

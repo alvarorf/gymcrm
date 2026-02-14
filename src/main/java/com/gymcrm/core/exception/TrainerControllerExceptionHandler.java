@@ -1,6 +1,7 @@
 package com.gymcrm.core.exception;
 
 import com.gymcrm.controller.TrainerController;
+import com.gymcrm.core.util.Nomenclature;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,7 +23,7 @@ public class TrainerControllerExceptionHandler {
         String method = request.getMethod();
         Map<String, String> errors = extractFieldErrors(ex);
 
-        return switch (method) {
+        return switch (method != null ? method : "POST") {
             case "POST" -> handleTrainerRegistrationValidation(errors, request);
             case "PUT" -> handleTrainerUpdateValidation(errors, request);
             case "PATCH" -> handleTrainerActivationValidation(errors, request);
@@ -35,12 +36,11 @@ public class TrainerControllerExceptionHandler {
         String method = request.getMethod();
         String uri = request.getRequestURI();
 
-        // Handle the specific training list path vs. general profile path
         if (uri.contains("/trainings")) {
             return handleTrainingSearchError(ex, request);
         }
 
-        return switch (method) {
+        return switch (method != null ? method : "GET") {
             case "GET" -> handleTrainerProfileNotFound(ex, request);
             default -> handleGenericRuntimeError(ex, request);
         };
@@ -51,40 +51,40 @@ public class TrainerControllerExceptionHandler {
 
     /** POST: Robust Validation for Trainer Registration */
     private ResponseEntity<Map<String, Object>> handleTrainerRegistrationValidation(Map<String, String> errors, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Trainer Registration Denied");
-        body.put("details", "Specialization (Training Type) is mandatory for Trainers.");
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_REG_FAILED);
+        body.put(Nomenclature.ERR.KEY_DETAILS, Nomenclature.ERR.DETAIL_TRAINER_SPEC);
         body.put("validation_errors", errors);
-        body.put("suggestion", "Ensure 'specialization' object contains a valid 'trainingTypeName'.");
+        body.put(Nomenclature.ERR.KEY_SUGGESTION, Nomenclature.ERR.SUGGESTION_TRAINER_SPEC);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     /** GET: Handling trainer search/criteria failures */
     private ResponseEntity<Map<String, Object>> handleTrainingSearchError(RuntimeException ex, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Training List Error");
-        body.put("message", "Could not retrieve trainings: " + ex.getMessage());
-        body.put("suggestion", "Verify that the trainer username and date range are correct.");
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_PERSISTENCE);
+        body.put(Nomenclature.ERR.KEY_MESSAGE, "Could not retrieve trainings: " + ex.getMessage());
+        body.put(Nomenclature.ERR.KEY_SUGGESTION, Nomenclature.ERR.SUGGESTION_TRAINER_SEARCH);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     /** PUT: Validation for Profile Updates */
     private ResponseEntity<Map<String, Object>> handleTrainerUpdateValidation(Map<String, String> errors, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Update Error");
-        body.put("details", "Trainer updates require a valid username and active status.");
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_UPDATE_REFUSED);
+        body.put(Nomenclature.ERR.KEY_DETAILS, Nomenclature.ERR.DETAIL_UPDATE_REQD);
         body.put("validation_errors", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     /** PATCH: Validation for Activation Toggle */
     private ResponseEntity<Map<String, Object>> handleTrainerActivationValidation(Map<String, String> errors, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Activation Failure");
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_TOGGLE_FAILED);
         body.put("validation_errors", errors);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     /** GET: Profile retrieval failures */
     private ResponseEntity<Map<String, Object>> handleTrainerProfileNotFound(RuntimeException ex, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, "Trainer Not Found");
-        body.put("message", ex.getMessage());
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_NOT_FOUND);
+        body.put(Nomenclature.ERR.KEY_MESSAGE, ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
@@ -92,9 +92,9 @@ public class TrainerControllerExceptionHandler {
 
     private Map<String, Object> createBaseBody(HttpServletRequest request, String errorType) {
         Map<String, Object> body = new HashMap<>();
-        body.put("timestamp", LocalDateTime.now());
+        body.put("timestamp", LocalDateTime.now().toString());
         body.put("path", request.getRequestURI());
-        body.put("error_type", errorType);
+        body.put(Nomenclature.ERR.KEY_ERR_TYPE, errorType);
         body.put("module", "TRAINER_SERVICE");
         return body;
     }
@@ -107,10 +107,14 @@ public class TrainerControllerExceptionHandler {
     }
 
     private ResponseEntity<Map<String, Object>> handleGenericValidation(Map<String, String> errors, HttpServletRequest request) {
-        return ResponseEntity.badRequest().body(Map.of("errors", errors));
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_REG_FAILED);
+        body.put(Nomenclature.ERR.KEY_ERRORS, errors);
+        return ResponseEntity.badRequest().body(body);
     }
 
     private ResponseEntity<Map<String, Object>> handleGenericRuntimeError(RuntimeException ex, HttpServletRequest request) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", ex.getMessage()));
+        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_INTERNAL);
+        body.put(Nomenclature.ERR.KEY_MESSAGE, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }

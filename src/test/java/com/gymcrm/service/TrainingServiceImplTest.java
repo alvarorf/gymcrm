@@ -1,5 +1,6 @@
 package com.gymcrm.service;
 
+import com.gymcrm.core.health.TrainingMetricsService;
 import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.dto.*;
 import com.gymcrm.mapper.TrainingMapper;
@@ -23,6 +24,7 @@ class TrainingServiceImplTest {
     @Mock private TraineeDao traineeDao;
     @Mock private TrainerDao trainerDao;
     @Mock private TrainingMapper trainingMapper;
+    @Mock private TrainingMetricsService trainingMetricsService;
 
     @InjectMocks
     private TrainingServiceImpl trainingService;
@@ -39,6 +41,7 @@ class TrainingServiceImplTest {
         trainingService.setTrainingMapper(trainingMapper);
         trainingService.setTraineeDao(traineeDao);
         trainingService.setTrainerDao(trainerDao);
+        trainingService.setTrainingMetricsService(trainingMetricsService);
 
         TrainingType sampleType = TrainingType.builder().trainingTypeName("Cardio").build();
 

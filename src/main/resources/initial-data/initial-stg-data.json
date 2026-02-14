@@ -1,0 +1,38 @@
+{
+  "trainingTypes": [
+    { "id": 1, "trainingTypeName": "Cardio" },
+    { "id": 2, "trainingTypeName": "Yoga" }
+  ],
+  "trainers": [
+    {
+      "userId": 301,
+      "firstName": "Jim",
+      "lastName": "Halpert",
+      "username": "jim-stg",
+      "password": "stg-password-123",
+      "isActive": true,
+      "specialization": { "id": 1, "trainingTypeName": "Cardio" }
+    }
+  ],
+  "trainees": [
+    {
+      "userId": 401,
+      "firstName": "Kelly",
+      "lastName": "Kapoor",
+      "username": "kelly-stg",
+      "password": "stg-password-456",
+      "isActive": true,
+      "dateOfBirth": "1980-02-05",
+      "address": "Staging Office, PA"
+    }
+  ],
+  "trainings": [
+    {
+      "id": 801,
+      "trainingName": "Staging Run",
+      "trainingDate": "2026-03-01",
+      "trainingDuration": 45,
+      "trainingType": { "id": 1, "trainingTypeName": "Cardio" }
+    }
+  ]
+}
