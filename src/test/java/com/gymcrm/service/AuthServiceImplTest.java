@@ -1,5 +1,6 @@
 package com.gymcrm.service;
 
+import com.gymcrm.core.util.JwtUtils;
 import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.model.Trainee;
 import com.gymcrm.core.security.CustomUserDetailsService;
@@ -8,11 +9,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.util.Optional;
 
@@ -28,28 +31,47 @@ class AuthServiceImplTest {
     @Mock private AuthenticationManager authenticationManager;
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private CustomUserDetailsService customUserDetailsService;
+    @Mock private JwtUtils jwtUtils;
+    @Mock private LoginAttemptService loginAttemptService;
 
     @InjectMocks
     private AuthServiceImpl authService;
 
+
     @Test
-    @DisplayName("AUTHENTICATE: Should return UserDetails on valid credentials")
+    @DisplayName("AUTHENTICATE: Should return JWT token on valid credentials")
     void authenticate_Success() {
         // ARRANGE
-        String user = "test.user";
-        String pass = "pass";
-        UserDetails mockDetails = User.builder().username(user).password(pass).roles("TRAINEE").build();
-        Authentication mockAuth = new UsernamePasswordAuthenticationToken(mockDetails, pass);
+        String username = "test.user";
+        String password = "password123";
+        String mockToken = "eyJhbGci...jwt.token";
 
-        when(authenticationManager.authenticate(any())).thenReturn(mockAuth);
+        Authentication mockAuth = mock(Authentication.class);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(mockAuth);
+        when(jwtUtils.generateToken(username)).thenReturn(mockToken);
 
         // ACT
-        UserDetails result = authService.authenticate(user, pass);
+        String result = authService.authenticate(username, password);
 
         // ASSERT
-        assertEquals(user, result.getUsername());
-        verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        assertNotNull(result);
+        assertEquals(mockToken, result);
+        verify(authenticationManager).authenticate(any());
     }
+
+    @Test
+    @DisplayName("AUTHENTICATE: Should propagate BadCredentialsException when auth fails")
+    void authenticate_Failed() {
+        // ARRANGE
+        when(authenticationManager.authenticate(any()))
+                .thenThrow(new BadCredentialsException("Invalid"));
+
+        // ACT & ASSERT
+        Assertions.assertThrows(BadCredentialsException.class, () ->
+                authService.authenticate("user", "wrong_pass"));
+    }
+
 
     @Test
     @DisplayName("LOAD USER: Should delegate to CustomUserDetailsService")

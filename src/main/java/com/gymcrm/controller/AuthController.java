@@ -6,6 +6,7 @@ import com.gymcrm.core.util.Nomenclature;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.*;
 import org.springframework.http.*;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -25,29 +26,27 @@ public class AuthController {
     }
 
     @Operation(summary = "Login")
-    @PostMapping("/login")
+    @PostMapping(value = "/login", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<String> login(@RequestParam String username, @RequestParam String password) {
-
-        // Validation: If blank, throw to be caught by AuthControllerExceptionHandler
         if (username == null || username.isBlank() || password == null || password.isBlank()) {
             throw new BadCredentialsException(Nomenclature.MSG.AUTH_REQUIRED);
         }
 
-        // authenticate() should throw UsernameNotFoundException or BadCredentialsException internally if it fails
-        authService.authenticate(username, password);
+        // We capture the token even if we return a success message
+        String token = authService.authenticate(username, password);
 
-        return ResponseEntity.ok(Nomenclature.MSG.LOGIN_SUCCESS);
-
+        // Ensure the message is explicitly in the body
+        return ResponseEntity.ok().body(Nomenclature.MSG.LOGIN_SUCCESS);
     }
 
     @Operation(summary = "Change login (password)")
-    @PutMapping("/change-password")
-    public ResponseEntity<String> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
-            authService.changePassword(
-                    request.getUsername(),
-                    request.getOldPassword(),
-                    request.getNewPassword()
-            );
-            return ResponseEntity.ok(Nomenclature.MSG.PASSWORD_CHANGED);
+    @PutMapping(value = "/change-password", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<String> changePassword(@NotNull @Valid @RequestBody PasswordChangeRequest request) {
+        authService.changePassword(
+                request.getUsername(),
+                request.getOldPassword(),
+                request.getNewPassword()
+        );
+        return ResponseEntity.ok().body(Nomenclature.MSG.PASSWORD_CHANGED);
     }
 }

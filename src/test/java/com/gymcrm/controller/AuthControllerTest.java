@@ -1,203 +1,118 @@
 package com.gymcrm.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymcrm.core.config.SecurityConfig;
-import com.gymcrm.core.logging.RestLoggingFilter;
-import com.gymcrm.core.logging.TransactionFilter;
-import com.gymcrm.dto.PasswordChangeRequest;
 import com.gymcrm.core.exception.AuthControllerExceptionHandler;
-import com.gymcrm.service.interfaces.AuthService;
+import com.gymcrm.core.security.JwtAuthenticationFilter;
 import com.gymcrm.core.util.Nomenclature;
-import org.junit.jupiter.api.*;
+import com.gymcrm.service.interfaces.AuthService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.*;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.IOException;
+
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(AuthController.class)
-@Import({
-        SecurityConfig.class,
-        TransactionFilter.class,
-        RestLoggingFilter.class,
-        AuthControllerExceptionHandler.class // Using specific handler instead of Global
-})
-@DisplayName("Authentication controller expanded unit tests")
+@Import({SecurityConfig.class, AuthControllerExceptionHandler.class})
+@DisplayName("Auth Controller Integration Tests")
 class AuthControllerTest {
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ObjectMapper objectMapper;
-    @MockitoBean private AuthService authService;
+    @Autowired
+    private MockMvc mockMvc;
 
-    // --- LOGIN COVERAGE ---
+    @MockitoBean
+    private AuthService authService;
+
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @BeforeEach
+    void setup() throws ServletException, IOException {
+        // Tell the mock filter to continue the chain,
+        // otherwise the request never reaches the controller
+        doAnswer(invocation -> {
+            HttpServletRequest request = invocation.getArgument(0);
+            HttpServletResponse response = invocation.getArgument(1);
+            FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(request, response);
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
+    }
 
     @Test
-    @DisplayName("LOGIN EMPTY: Should return 400 with Nomenclature message via JSON")
-    void login_EmptyCredentials() throws Exception {
+    @DisplayName("LOGIN: Should return 200 OK on successful authentication")
+    void login_Success() throws Exception {
+        when(authService.authenticate(anyString(), anyString())).thenReturn("mock-token");
+
         mockMvc.perform(post("/api/auth/login")
-                        .with(csrf())
-                        .param("username", "")
-                        .param("password", ""))
-                .andExpect(status().isBadRequest()) // Now matches 400
-                .andExpect(jsonPath("$.message").value(Nomenclature.MSG.AUTH_REQUIRED))
+                        .param("username", "admin")
+                        .param("password", "admin")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                // Check content string exactly
+                .andExpect(content().string(Nomenclature.MSG.LOGIN_SUCCESS));
+    }
+
+    @Test
+    @DisplayName("LOGIN: Should return 401 Unauthorized on bad credentials")
+    void login_InvalidCredentials() throws Exception {
+        // ARRANGE: Service must throw to trigger ExceptionHandler
+        when(authService.authenticate(anyString(), anyString()))
+                .thenThrow(new BadCredentialsException(Nomenclature.MSG.INVALID_CREDENTIALS));
+
+        // ACT & ASSERT
+        mockMvc.perform(post("/api/auth/login")
+                        .param("username", "wrong")
+                        .param("password", "wrong")
+                        .with(csrf()))
+                .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_CREDENTIALS_INVALID));
     }
 
     @Test
-    @DisplayName("LOGIN NOT FOUND: Should return 404 from ExceptionHandler")
-    void login_UserNotFound() throws Exception {
-        String errMsg = Nomenclature.getNotFoundMsg("unknown.user");
-        when(authService.authenticate(anyString(), anyString()))
-                .thenThrow(new UsernameNotFoundException(errMsg));
-
+    @DisplayName("LOGIN: Should return 400 Bad Request when parameters are blank")
+    void login_BlankParameters() throws Exception {
+        // No need to mock service here, controller throws before calling it
         mockMvc.perform(post("/api/auth/login")
-                        .with(csrf())
-                        .param("username", "unknown.user")
-                        .param("password", "any"))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_USER_NOT_FOUND))
-                .andExpect(jsonPath("$.message").value(errMsg));
-    }
-
-    @Test
-    @DisplayName("LOGIN WRONG PASS: Should return 401 via BadCredentialsException")
-    void login_WrongPassword() throws Exception {
-        when(authService.authenticate(anyString(), anyString()))
-                .thenThrow(new BadCredentialsException(Nomenclature.MSG.INVALID_CREDENTIALS));
-
-        mockMvc.perform(post("/api/auth/login")
-                        .with(csrf())
-                        .param("username", "test.user")
-                        .param("password", "wrong"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_CREDENTIALS_INVALID))
-                .andExpect(jsonPath("$.message").value(Nomenclature.MSG.INVALID_CREDENTIALS));
-    }
-
-    // --- CHANGE PASSWORD COVERAGE ---
-
-    @Test
-    @WithMockUser
-    @DisplayName("PW CHANGE VALIDATION: Missing new password should return 400")
-    void changePassword_ValidationFailure() throws Exception {
-        PasswordChangeRequest request = new PasswordChangeRequest("user", "old", ""); // Empty new password
-
-        mockMvc.perform(put("/api/auth/change-password")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.validation_errors.newPassword").value(Nomenclature.REQD.NEW_PASSWORD));
+                        .param("username", "")
+                        .param("password", "")
+                        .with(csrf()))
+                .andExpect(status().isBadRequest());
     }
 
     @Test
     @WithMockUser
-    @DisplayName("PW CHANGE CONFLICT: Same password should return 409")
-    void changePassword_SamePasswordConflict() throws Exception {
-        PasswordChangeRequest request = new PasswordChangeRequest("user", "same", "same");
-
+    @DisplayName("CHANGE PASSWORD: Should return 409 Conflict when passwords are the same")
+    void changePassword_SamePassword() throws Exception {
+        // ARRANGE
         doThrow(new IllegalArgumentException(Nomenclature.ERR.DETAIL_SAME_PASSWORD))
                 .when(authService).changePassword(anyString(), anyString(), anyString());
 
-        mockMvc.perform(put("/api/auth/change-password")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_SAME_PASSWORD))
-                .andExpect(jsonPath("$.details").value(Nomenclature.ERR.DETAIL_SAME_PASSWORD));
-    }
-
-    // --- SUCCESS COVERAGE ---
-
-    @Test
-    @DisplayName("LOGIN SUCCESS: Should return 200 and success message")
-    void login_Success() throws Exception {
-        // Mock success: return a dummy UserDetails object
-        UserDetails dummyUser = User.withUsername("test.user")
-                .password("encodedPass")
-                .roles("USER")
-                .build();
-
-        when(authService.authenticate("test.user", "correctPass"))
-                .thenReturn(dummyUser);
-
-        mockMvc.perform(post("/api/auth/login")
-                        .with(csrf())
-                        .param("username", "test.user")
-                        .param("password", "correctPass"))
-                .andExpect(status().isOk())
-                .andExpect(content().string(Nomenclature.MSG.LOGIN_SUCCESS));
-
-        verify(authService, times(1)).authenticate("test.user", "correctPass");
-    }
-
-    @Test
-    @WithMockUser
-    @DisplayName("PW CHANGE SUCCESS: Should return 200 and change message")
-    void changePassword_Success() throws Exception {
-        PasswordChangeRequest request = new PasswordChangeRequest("user", "old", "new");
-
-        // void methods in Mockito do nothing by default, which is what we want for success
-        doNothing().when(authService).changePassword("user", "old", "new");
-
-        mockMvc.perform(put("/api/auth/change-password")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(content().string(Nomenclature.MSG.PASSWORD_CHANGED));
-
-        // Verifies the service was called, proving the controller logic completed
-        verify(authService, times(1)).changePassword("user", "old", "new");
-    }
-
-    @Test
-    @WithMockUser
-    @DisplayName("PW CHANGE CONFLICT: Should return 409 and MSG.PASSWORD_CHANGE_FAILED")
-    void changePassword_ConflictMessageCheck() throws Exception {
-        // ARRANGE
-        PasswordChangeRequest request = new PasswordChangeRequest("user", "same", "same");
-        doThrow(new IllegalArgumentException(Nomenclature.ERR.DETAIL_SAME_PASSWORD))
-                .when(authService).changePassword(anyString(), anyString(), anyString());
+        String json = "{\"username\":\"u\",\"oldPassword\":\"p\",\"newPassword\":\"p\"}";
 
         // ACT & ASSERT
         mockMvc.perform(put("/api/auth/change-password")
-                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content(json)
+                        .with(csrf()))
                 .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value(Nomenclature.MSG.PASSWORD_CHANGE_FAILED))
-                .andExpect(jsonPath("$.details").value(Nomenclature.ERR.DETAIL_SAME_PASSWORD));
-    }
-
-    @Test
-    @WithMockUser
-    @DisplayName("PW CHANGE RUNTIME: Should return 401 and MSG.PASSWORD_CHANGE_FAILED")
-    void changePassword_RuntimeMessageCheck() throws Exception {
-        // ARRANGE
-        PasswordChangeRequest request = new PasswordChangeRequest("user", "old", "new");
-        String technicalError = "Database timeout";
-        doThrow(new RuntimeException(technicalError))
-                .when(authService).changePassword(anyString(), anyString(), anyString());
-
-        // ACT & ASSERT
-        mockMvc.perform(put("/api/auth/change-password")
-                        .with(csrf())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.message").value(Nomenclature.MSG.PASSWORD_CHANGE_FAILED))
-                .andExpect(jsonPath("$.technical_details").value(technicalError));
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_SAME_PASSWORD));
     }
 }

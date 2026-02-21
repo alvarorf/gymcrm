@@ -1,6 +1,7 @@
 package com.gymcrm.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gymcrm.core.security.JwtAuthenticationFilter;
 import com.gymcrm.core.util.Nomenclature;
 import com.gymcrm.dto.TrainingCreateRequest;
 import com.gymcrm.service.interfaces.TrainingService;
@@ -28,6 +29,20 @@ class TrainingControllerTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
     @MockitoBean private TrainingService trainingService;
+    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        // Prevent the mocked security filter from blocking the request.
+        // Without this, we will get 200 OK with an empty body ("Shadow 200" bug).
+        doAnswer(invocation -> {
+            jakarta.servlet.http.HttpServletRequest request = invocation.getArgument(0);
+            jakarta.servlet.http.HttpServletResponse response = invocation.getArgument(1);
+            jakarta.servlet.FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(request, response);
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
+    }
 
     @Test
     @WithMockUser

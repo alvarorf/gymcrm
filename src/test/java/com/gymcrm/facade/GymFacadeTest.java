@@ -39,7 +39,7 @@ class GymFacadeTest {
 
         // Authenticate returns UserDetails
         UserDetails mockUser = new User(user, pass, Collections.emptyList());
-        when(authService.authenticate(user, pass)).thenReturn(mockUser);
+        when(authService.authenticate(user, pass)).thenReturn(String.valueOf(mockUser));
 
         // ACT
         boolean result = gymFacade.login(user, pass);

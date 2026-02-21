@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gymcrm.core.config.SecurityConfig;
 import com.gymcrm.core.logging.RestLoggingFilter;
 import com.gymcrm.core.logging.TransactionFilter;
+import com.gymcrm.core.security.CustomUserDetailsService;
+import com.gymcrm.core.security.JwtAuthenticationFilter;
+import com.gymcrm.core.util.JwtUtils;
 import com.gymcrm.dto.*;
 import com.gymcrm.core.exception.TraineeControllerExceptionHandler;
 import com.gymcrm.service.interfaces.*;
@@ -20,7 +23,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Optional;
 
-// Missing static imports for full coverage
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -43,9 +45,27 @@ class TraineeControllerTest {
     @MockitoBean private TraineeService traineeService;
     @MockitoBean private TrainerService trainerService;
 
+    // Mocks to satisfy SecurityConfig and the Filter Chain
+    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @MockitoBean private CustomUserDetailsService customUserDetailsService;
+    @MockitoBean private JwtUtils jwtUtils;
+
     public TraineeControllerTest(MockMvc mockMvc, ObjectMapper objectMapper) {
         this.mockMvc = mockMvc;
         this.objectMapper = objectMapper;
+    }
+
+    @BeforeEach
+    void setUp() throws Exception {
+        // Prevent the mocked security filter from blocking the request.
+        // Without this, we will get 200 OK with an empty body ("Shadow 200" bug).
+        doAnswer(invocation -> {
+            jakarta.servlet.http.HttpServletRequest request = invocation.getArgument(0);
+            jakarta.servlet.http.HttpServletResponse response = invocation.getArgument(1);
+            jakarta.servlet.FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(request, response);
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
     }
 
     // --- REGISTRATION ---
@@ -340,7 +360,7 @@ class TraineeControllerTest {
         // ACT & ASSERT
         mockMvc.perform(get("/api/trainees/alice.smith/unassigned-trainers"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_NOT_FOUND)) // GET defaults to TYPE_NOT_FOUND in your handler
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_NOT_FOUND))
                 .andExpect(jsonPath("$.message").value("Unexpected Database Error"));
     }
 

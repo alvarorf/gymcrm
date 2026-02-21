@@ -1,6 +1,7 @@
 package com.gymcrm.controller;
 
 import com.gymcrm.core.exception.TrainingTypeControllerExceptionHandler;
+import com.gymcrm.core.security.JwtAuthenticationFilter;
 import com.gymcrm.mapper.TrainingTypeMapper;
 import com.gymcrm.service.interfaces.TrainingTypeService;
 import org.junit.jupiter.api.*;
@@ -14,6 +15,8 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import java.util.Collections;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -23,14 +26,23 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Training Type Controller Expanded Tests")
 class TrainingTypeControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    @Autowired private MockMvc mockMvc;
+    @MockitoBean private TrainingTypeService trainingTypeService;
+    @MockitoBean private TrainingTypeMapper trainingTypeMapper;
+    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @MockitoBean
-    private TrainingTypeService trainingTypeService;
-
-    @MockitoBean
-    private TrainingTypeMapper trainingTypeMapper;
+    @BeforeEach
+    void setUp() throws Exception {
+        // Prevent the mocked security filter from blocking the request.
+        // Without this, we will get 200 OK with an empty body ("Shadow 200" bug).
+        doAnswer(invocation -> {
+            jakarta.servlet.http.HttpServletRequest request = invocation.getArgument(0);
+            jakarta.servlet.http.HttpServletResponse response = invocation.getArgument(1);
+            jakarta.servlet.FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(request, response);
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
+    }
 
     @Test
     @WithMockUser

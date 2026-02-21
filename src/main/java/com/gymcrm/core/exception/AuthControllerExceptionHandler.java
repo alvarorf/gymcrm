@@ -18,7 +18,10 @@ public class AuthControllerExceptionHandler {
     /** 1. Handles @Valid failures (empty credentials/passwords) */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        Map<String, String> errors = extractFieldErrors(ex);
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors().forEach(error ->
+                errors.put(error.getField(), error.getDefaultMessage()));
+
         Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_AUTH_FAILED);
         body.put(Nomenclature.ERR.KEY_DETAILS, Nomenclature.MSG.AUTH_REQUIRED);
         body.put("validation_errors", errors);
@@ -28,15 +31,11 @@ public class AuthControllerExceptionHandler {
     /** 2. Handles wrong password */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<Map<String, Object>> handleBadCredentials(BadCredentialsException ex, HttpServletRequest request) {
-        // If the error message indicates missing input, return 400. Otherwise 401.
-        HttpStatus status = ex.getMessage().equals(Nomenclature.MSG.AUTH_REQUIRED)
-                ? HttpStatus.BAD_REQUEST
-                : HttpStatus.UNAUTHORIZED;
+        boolean isMissingInput = ex.getMessage() != null && ex.getMessage().contains(Nomenclature.MSG.AUTH_REQUIRED);
+        HttpStatus status = isMissingInput ? HttpStatus.BAD_REQUEST : HttpStatus.UNAUTHORIZED;
 
         Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_CREDENTIALS_INVALID);
         body.put(Nomenclature.ERR.KEY_MESSAGE, ex.getMessage());
-        body.put(Nomenclature.ERR.KEY_SUGGESTION, Nomenclature.ERR.SUGGESTION_LOGIN);
-
         return ResponseEntity.status(status).body(body);
     }
 

@@ -1,5 +1,6 @@
 package com.gymcrm.service;
 
+import com.gymcrm.core.util.JwtUtils;
 import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.core.security.CustomUserDetailsService;
 import com.gymcrm.service.interfaces.AuthService;
@@ -18,6 +19,8 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService customUserDetailsService;
+    private final LoginAttemptService loginAttemptService;
+    private final JwtUtils jwtUtils;
 
     // Logger
     private static final Logger logger = LoggerFactory.getLogger(AuthServiceImpl.class);
@@ -25,25 +28,37 @@ public class AuthServiceImpl implements AuthService {
     public AuthServiceImpl(TraineeDao traineeDao,
                            TrainerDao trainerDao,
                            AuthenticationManager authenticationManager,
-                           PasswordEncoder passwordEncoder, CustomUserDetailsService customUserDetailsService) {
+                           PasswordEncoder passwordEncoder, CustomUserDetailsService customUserDetailsService, LoginAttemptService loginAttemptService, JwtUtils jwtUtils) {
         this.traineeDao = traineeDao;
         this.trainerDao = trainerDao;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.customUserDetailsService = customUserDetailsService;
+        this.loginAttemptService = loginAttemptService;
+        this.jwtUtils = jwtUtils;
     }
 
     @Override
-    public UserDetails authenticate(String username, String password) {
+    public String authenticate(String username, String password) {
         Nomenclature.info(logger, Nomenclature.Action.AUTH);
+        // Check if user is blocked
+        if (loginAttemptService.isBlocked(username)) {
+            throw new RuntimeException("Account is blocked for 5 minutes due to 3 failed attempts.");
+        }
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(username, password)
+            );
 
-        // This delegates password matching and user loading to Spring Security's internal providers
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(username, password)
-        );
+            // Success: Reset attempts and return JWT
+            loginAttemptService.loginSucceeded(username);
+            return jwtUtils.generateToken(username);
 
-        // If successful, the principal is our UserDetails object
-        return (UserDetails) authentication.getPrincipal();
+        } catch (BadCredentialsException e) {
+            // 3. Failure: Track attempt and rethrow
+            loginAttemptService.loginFailed(username);
+            throw e;
+        }
     }
 
     @Override
@@ -62,7 +77,7 @@ public class AuthServiceImpl implements AuthService {
         // This will throw an AuthenticationException if the old password doesn't match
         authenticate(username, oldPassword);
 
-        // Encode the password before saving!
+        // Encode the password before saving
         String encodedPassword = passwordEncoder.encode(newPassword);
 
         // If authentication passed, update the user in the database

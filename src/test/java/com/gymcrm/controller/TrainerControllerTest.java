@@ -5,6 +5,9 @@ import com.gymcrm.core.config.SecurityConfig;
 import com.gymcrm.core.logging.RestLoggingFilter;
 import com.gymcrm.core.logging.TransactionFilter;
 import com.gymcrm.core.exception.TrainerControllerExceptionHandler;
+import com.gymcrm.core.security.CustomUserDetailsService;
+import com.gymcrm.core.security.JwtAuthenticationFilter;
+import com.gymcrm.core.util.JwtUtils;
 import com.gymcrm.core.util.Nomenclature;
 import com.gymcrm.dto.*;
 import com.gymcrm.service.interfaces.TrainerService;
@@ -26,6 +29,7 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -45,6 +49,11 @@ class TrainerControllerTest {
     @MockitoBean private TrainerService trainerService;
     @MockitoBean private TrainingService trainingService;
 
+    // Mocks to satisfy SecurityConfig and the Filter Chain
+    @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
+    @MockitoBean private CustomUserDetailsService customUserDetailsService;
+    @MockitoBean private JwtUtils jwtUtils;
+
     // Constructor injection for the test class itself
     public TrainerControllerTest(MockMvc mockMvc, ObjectMapper objectMapper, TrainerController trainerController) {
         this.mockMvc = mockMvc;
@@ -53,9 +62,19 @@ class TrainerControllerTest {
     }
 
     @BeforeEach
-    void setUp() {
-        // Manually satisfy the setter injection because the controller field is not @Autowired
+    void setUp() throws Exception {
+        // 1. Manually satisfy the setter injection if not handled by constructor
         trainerController.setTrainingService(trainingService);
+
+        // 2. Prevent the mocked security filter from blocking the request.
+        // Without this, we will get 200 OK with an empty body ("Shadow 200" bug).
+        doAnswer(invocation -> {
+            jakarta.servlet.http.HttpServletRequest request = invocation.getArgument(0);
+            jakarta.servlet.http.HttpServletResponse response = invocation.getArgument(1);
+            jakarta.servlet.FilterChain chain = invocation.getArgument(2);
+            chain.doFilter(request, response);
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(any(), any(), any());
     }
 
     // --- 1. REGISTRATION ---
@@ -213,7 +232,8 @@ class TrainerControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_UPDATE_REFUSED));
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_UPDATE_REFUSED))
+                .andExpect(jsonPath("$.validation_errors.username").exists());;
     }
 
     @Test
