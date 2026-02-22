@@ -9,7 +9,6 @@ import com.gymcrm.service.interfaces.AuthService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.*;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -49,7 +48,7 @@ public class AuthServiceImpl implements AuthService {
             throw new RuntimeException(Nomenclature.ERR.ACC_BLOCKED_BFORCE_PROTECTION);
         }
         try {
-            Authentication authentication = authenticationManager.authenticate(
+            authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, password)
             );
 
@@ -84,7 +83,7 @@ public class AuthServiceImpl implements AuthService {
         String encodedPassword = passwordEncoder.encode(newPassword);
 
         // If authentication passed, update the user in the database
-        // The newPassword should be encoded here via PasswordEncoder
+        // The newPassword should be encoded via PasswordEncoder
         boolean updated = updatePasswordInStorage(username, encodedPassword);
 
         if (!updated) {  throw new UsernameNotFoundException(Nomenclature.getNotFoundMsg(username));  }
@@ -99,6 +98,4 @@ public class AuthServiceImpl implements AuthService {
                         .map(t -> { t.setPassword(newPassword); trainerDao.save(t); return true; })
                         .orElse(false));
     }
-
-
 }

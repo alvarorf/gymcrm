@@ -187,5 +187,4 @@ public final class Nomenclature {
     }
 
     public static String getNotFoundMsg(String identifier) { return MSG.NOT_FOUND + identifier;}
-
 }
