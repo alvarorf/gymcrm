@@ -4,8 +4,6 @@ import org.slf4j.Logger;
 
 public final class Nomenclature {
 
-    private Nomenclature() {}
-
     // --- Action keys
     public enum Action {
         CREATE, UPDATE, DELETE, FETCH, AUTH, INITIALIZE, TOGGLE, UPDATE_SENSITIVE, SEED, HEALTH_CHECK, METRICS_INIT
@@ -43,6 +41,7 @@ public final class Nomenclature {
      * These must be 'public static final String' to be used in Annotations.
      */
     public static final class REQD {
+        private REQD() {}
         public static final String FIRST_NAME = "First Name is required";
         public static final String LAST_NAME = "Last Name is required";
         public static final String USERNAME = "Username is required";
@@ -53,14 +52,12 @@ public final class Nomenclature {
         public static final String NEW_PASSWORD = "New password is required";
         public static final String IS_ACTIVE = "Activation status is required";
         public static final String SPECIALIZATION = "Specialization is required";
-        public static final String TRAINING_TYPE = "Training Type name is required";
         public static final String TRAINING_NAME = "Training Name is required";
-        public static final String TRAINING_DATE = "Training Date is required";
         public static final String TRAINING_DURATION = "Training Duration is required";
     }
 
     public static final class ERR {
-
+        private ERR() {}
         // Module & field headers
         public static final String MODULE_TRAINING = "TRAINING_SERVICE";
         public static final String TYPE_TRAINING_DENIED = "Training Creation Denied";
@@ -91,12 +88,10 @@ public final class Nomenclature {
 
         // Detail Templates
         public static final String DETAIL_SAME_PASSWORD = "New password cannot be the same as the old password.";
-        public static final String SUGGESTION_LOGIN = "Please check your username and password and try again.";
         public static final String DETAIL_TRAINING_MISSING = "Mandatory session details are missing or empty.";
         public static final String DETAIL_INCOMPATIBLE_TYPES = "The request body contains incompatible data types.";
         public static final String DETAIL_REG_MISSING = "Mandatory fields: %s and %s are missing or empty.";
         public static final String DETAIL_UPDATE_REQD = "Updating a trainee requires: %s and %s.";
-        public static final String DETAIL_DEL_PREFIX = "Cannot delete trainee: ";
         public static final String SUGGESTION_VERIFY_NOMEN = "Please verify the Trainee nomenclature requirements.";
 
         // Suggestions
@@ -109,22 +104,24 @@ public final class Nomenclature {
         public static final String SUGGESTION_TRAINER_SPEC = "Ensure 'specialization' object contains a valid 'trainingTypeName'.";
         public static final String SUGGESTION_TRAINER_SEARCH = "Verify that the trainer username and date range are correct.";
 
-        // Generic keys
-        public static final String KEY_ERRORS = "errors";
+        // Generic technical error
         public static final String KEY_TECHNICAL_ERROR = "technical_error";
+
+        // Account blocked due to brute force protection
+        public static final String ACC_BLOCKED_BFORCE_PROTECTION= "Account is blocked for 5 minutes due to 3 failed attempts.";
     }
 
     public static final class MSG {
+        private MSG(){}
         // --- Validation, response and server error messages ---
         public static final String LOGIN_SUCCESS = "Login successful";
         public static final String INVALID_CREDENTIALS = "Invalid credentials";
-        public static final String AUTH_FAILED = "Authentication failed: ";
         public static final String AUTH_REQUIRED = "Username and password are required.";
         public static final String PASSWORD_CHANGED = "Password changed successfully";
         public static final String PASSWORD_CHANGE_FAILED = "Password change failed with errors";
 
 
-        // --- Dictionary and error mssages ---
+        // --- Dictionary and error messages ---
         public static final String INTERNAL_ERROR = "An unexpected error occurred. . Please try again later.";
         public static final String NOT_FOUND = "Record not found for: ";
         public static final String SUGGESTION_MALFORMED = "Please ensure your JSON structure and data types are correct.";
@@ -132,6 +129,9 @@ public final class Nomenclature {
         // Health details
         public static final String HEALTH_UP = "Seed data source is accessible";
         public static final String HEALTH_DOWN = "Seed data file missing!";
+
+        public static final String LOGOUT_SUCCESS = "Logout successful";
+        public static final String LOGOUT_FAILED = "Logout failed";
 
     }
 

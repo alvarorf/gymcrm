@@ -1,9 +1,6 @@
 package com.gymcrm.service.interfaces;
 
-import com.gymcrm.dto.RegistrationResponse;
-import com.gymcrm.dto.TraineeProfileResponse;
-import com.gymcrm.dto.TraineeRegistrationRequest;
-import com.gymcrm.dto.TraineeUpdateRequest;
+import com.gymcrm.dto.*;
 
 import java.util.List;
 import java.util.Optional;

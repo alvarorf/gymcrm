@@ -1,13 +1,15 @@
 package com.gymcrm.controller;
 
-import com.gymcrm.dto.*;
-import com.gymcrm.service.interfaces.*;
 import com.gymcrm.core.util.Nomenclature;
+import com.gymcrm.dto.*;
+import com.gymcrm.service.interfaces.TrainerService;
+import com.gymcrm.service.interfaces.TrainingService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.Setter;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;

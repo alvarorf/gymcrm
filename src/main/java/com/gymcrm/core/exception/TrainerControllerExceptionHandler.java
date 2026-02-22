@@ -20,30 +20,34 @@ public class TrainerControllerExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        String method = request.getMethod();
         Map<String, String> errors = extractFieldErrors(ex);
+        String uri = request.getRequestURI();
 
-        return switch (method != null ? method : "POST") {
-            case "POST" -> handleTrainerRegistrationValidation(errors, request);
-            case "PUT" -> handleTrainerUpdateValidation(errors, request);
-            case "PATCH" -> handleTrainerActivationValidation(errors, request);
-            default -> handleGenericValidation(errors, request);
-        };
+        // Map by URI instead of Method
+        if (uri.endsWith("/register")) {
+            return handleTrainerRegistrationValidation(errors, request);
+        } else if (uri.endsWith("/activation")) {
+            return handleTrainerActivationValidation(errors, request);
+        }
+        // Default for PUT (Update) or any other Trainer endpoint
+        return handleTrainerUpdateValidation(errors, request);
     }
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntime(RuntimeException ex, HttpServletRequest request) {
-        String method = request.getMethod();
         String uri = request.getRequestURI();
 
         if (uri.contains("/trainings")) {
             return handleTrainingSearchError(ex, request);
         }
 
-        return switch (method != null ? method : "GET") {
-            case "GET" -> handleTrainerProfileNotFound(ex, request);
-            default -> handleGenericRuntimeError(ex, request);
-        };
+        // If it's a GET request for a profile and fails
+        if ("GET".equalsIgnoreCase(request.getMethod())) {
+            return handleTrainerProfileNotFound(ex, request);
+        }
+
+        // Generic fallback for any other unexpected runtime issues in Trainer module
+        return handleGenericRuntimeError(ex, request);
     }
 
     // --- Handler methods ---
@@ -104,12 +108,6 @@ public class TrainerControllerExceptionHandler {
         ex.getBindingResult().getFieldErrors().forEach(error ->
                 fieldErrors.put(error.getField(), error.getDefaultMessage()));
         return fieldErrors;
-    }
-
-    private ResponseEntity<Map<String, Object>> handleGenericValidation(Map<String, String> errors, HttpServletRequest request) {
-        Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_REG_FAILED);
-        body.put(Nomenclature.ERR.KEY_ERRORS, errors);
-        return ResponseEntity.badRequest().body(body);
     }
 
     private ResponseEntity<Map<String, Object>> handleGenericRuntimeError(RuntimeException ex, HttpServletRequest request) {

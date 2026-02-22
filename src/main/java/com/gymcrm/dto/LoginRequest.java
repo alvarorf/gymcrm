@@ -5,16 +5,14 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
-public class PasswordChangeRequest {
+public class LoginRequest {
+
     @NotBlank(message = Nomenclature.REQD.USERNAME)
     private String username;
 
-    @NotBlank(message = Nomenclature.REQD.OLD_PASSWORD)
-    private String oldPassword;
-
-    @NotBlank(message = Nomenclature.REQD.NEW_PASSWORD)
-    private String newPassword;
+    @NotBlank(message = Nomenclature.REQD.PASSWORD)
+    private String password;
 }

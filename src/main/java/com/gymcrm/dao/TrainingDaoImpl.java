@@ -1,16 +1,16 @@
 package com.gymcrm.dao;
 
+import com.gymcrm.core.util.Nomenclature;
 import com.gymcrm.dao.interfaces.TrainingDao;
 import com.gymcrm.model.Training;
 import com.gymcrm.repositories.TrainingRepository;
-import com.gymcrm.core.util.Nomenclature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
-
-import java.util.*;
-
-// Logging
-import org.slf4j.*; // Simple Logging Facade for Java
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class TrainingDaoImpl implements TrainingDao {

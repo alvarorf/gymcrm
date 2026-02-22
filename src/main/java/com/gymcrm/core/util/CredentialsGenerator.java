@@ -5,6 +5,7 @@ import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.dto.GeneratedCredentialsResponse;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
 import java.security.SecureRandom;
 
 @Component

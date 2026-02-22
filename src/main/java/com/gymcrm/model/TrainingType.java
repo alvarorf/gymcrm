@@ -1,9 +1,9 @@
 package com.gymcrm.model;
 
-import org.hibernate.annotations.Immutable;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.Immutable;
 
 @Data //  Bundles the features of @ToString, @EqualsAndHashCode, @Getter / @Setter and @RequiredArgsConstructor together:
 @Entity

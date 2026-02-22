@@ -4,9 +4,7 @@ package com.gymcrm.service.interfaces;
 Training Service class should support possibility to create/select Training profile.
  */
 
-import com.gymcrm.dto.TraineeTrainingResponse;
-import com.gymcrm.dto.TrainerTrainingResponse;
-import com.gymcrm.dto.TrainingCreateRequest;
+import com.gymcrm.dto.*;
 import com.gymcrm.model.Training;
 
 import java.time.LocalDate;

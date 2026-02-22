@@ -1,6 +1,7 @@
 package com.gymcrm.mapper;
 
-import com.gymcrm.model.*;
+import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;

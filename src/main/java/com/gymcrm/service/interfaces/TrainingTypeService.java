@@ -1,6 +1,7 @@
 package com.gymcrm.service.interfaces;
 
 import com.gymcrm.model.TrainingType;
+
 import java.util.List;
 import java.util.Optional;
 

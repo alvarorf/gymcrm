@@ -3,6 +3,7 @@ package com.gymcrm.mapper;
 import com.gymcrm.dto.*;
 import com.gymcrm.model.Trainee;
 import org.springframework.stereotype.Component;
+
 import java.util.stream.Collectors;
 
 @Component

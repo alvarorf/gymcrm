@@ -1,10 +1,7 @@
 package com.gymcrm.dto;
 
 import com.gymcrm.model.TrainingType;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder

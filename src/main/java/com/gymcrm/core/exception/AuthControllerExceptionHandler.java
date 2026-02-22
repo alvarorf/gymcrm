@@ -3,14 +3,17 @@ package com.gymcrm.core.exception;
 import com.gymcrm.controller.AuthController;
 import com.gymcrm.core.util.Nomenclature;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice(assignableTypes = AuthController.class)
 public class AuthControllerExceptionHandler {
@@ -63,6 +66,18 @@ public class AuthControllerExceptionHandler {
         body.put(Nomenclature.ERR.KEY_MESSAGE, Nomenclature.MSG.PASSWORD_CHANGE_FAILED);
         body.put("technical_details", ex.getMessage());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    /** 6. Handles Logout or Session issues */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneralError(Exception ex, HttpServletRequest request) {
+        // If the URI contains logout, we treat it as a logout error
+        String uri = request.getRequestURI();
+        String errorType = uri.contains("logout") ? Nomenclature.MSG.LOGOUT_FAILED : Nomenclature.ERR.TYPE_INTERNAL;
+
+        Map<String, Object> body = createBaseBody(request, errorType);
+        body.put(Nomenclature.ERR.KEY_MESSAGE, ex.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 
     // --- Utilities ---

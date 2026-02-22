@@ -1,20 +1,23 @@
 package com.gymcrm.service;
 
 import com.gymcrm.core.health.TrainingMetricsService;
+import com.gymcrm.core.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature.Action;
 import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.dto.*;
 import com.gymcrm.mapper.TrainingMapper;
 import com.gymcrm.model.*;
 import com.gymcrm.service.interfaces.TrainingService;
 import lombok.Setter;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import com.gymcrm.core.util.Nomenclature;
-import com.gymcrm.core.util.Nomenclature.Action;
+
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service  // Could also be @Component

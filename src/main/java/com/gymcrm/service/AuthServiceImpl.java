@@ -1,16 +1,19 @@
 package com.gymcrm.service;
 
-import com.gymcrm.core.util.JwtUtils;
-import com.gymcrm.dao.interfaces.*;
 import com.gymcrm.core.security.CustomUserDetailsService;
-import com.gymcrm.service.interfaces.AuthService;
+import com.gymcrm.core.util.JwtUtils;
 import com.gymcrm.core.util.Nomenclature;
-import org.slf4j.*;
-import org.springframework.security.core.userdetails.*;
+import com.gymcrm.dao.interfaces.TraineeDao;
+import com.gymcrm.dao.interfaces.TrainerDao;
+import com.gymcrm.service.interfaces.AuthService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.security.core.Authentication;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -19,7 +22,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService customUserDetailsService;
-    private final LoginAttemptService loginAttemptService;
+    private final LoginAttemptServiceImpl loginAttemptServiceImpl;
     private final JwtUtils jwtUtils;
 
     // Logger
@@ -28,13 +31,13 @@ public class AuthServiceImpl implements AuthService {
     public AuthServiceImpl(TraineeDao traineeDao,
                            TrainerDao trainerDao,
                            AuthenticationManager authenticationManager,
-                           PasswordEncoder passwordEncoder, CustomUserDetailsService customUserDetailsService, LoginAttemptService loginAttemptService, JwtUtils jwtUtils) {
+                           PasswordEncoder passwordEncoder, CustomUserDetailsService customUserDetailsService, LoginAttemptServiceImpl loginAttemptServiceImpl, JwtUtils jwtUtils) {
         this.traineeDao = traineeDao;
         this.trainerDao = trainerDao;
         this.authenticationManager = authenticationManager;
         this.passwordEncoder = passwordEncoder;
         this.customUserDetailsService = customUserDetailsService;
-        this.loginAttemptService = loginAttemptService;
+        this.loginAttemptServiceImpl = loginAttemptServiceImpl;
         this.jwtUtils = jwtUtils;
     }
 
@@ -42,8 +45,8 @@ public class AuthServiceImpl implements AuthService {
     public String authenticate(String username, String password) {
         Nomenclature.info(logger, Nomenclature.Action.AUTH);
         // Check if user is blocked
-        if (loginAttemptService.isBlocked(username)) {
-            throw new RuntimeException("Account is blocked for 5 minutes due to 3 failed attempts.");
+        if (loginAttemptServiceImpl.isBlocked(username)) {
+            throw new RuntimeException(Nomenclature.ERR.ACC_BLOCKED_BFORCE_PROTECTION);
         }
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -51,12 +54,12 @@ public class AuthServiceImpl implements AuthService {
             );
 
             // Success: Reset attempts and return JWT
-            loginAttemptService.loginSucceeded(username);
+            loginAttemptServiceImpl.loginSucceeded(username);
             return jwtUtils.generateToken(username);
 
         } catch (BadCredentialsException e) {
             // 3. Failure: Track attempt and rethrow
-            loginAttemptService.loginFailed(username);
+            loginAttemptServiceImpl.loginFailed(username);
             throw e;
         }
     }

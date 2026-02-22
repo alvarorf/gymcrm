@@ -1,8 +1,6 @@
 package com.gymcrm.core.util;
 
-import com.gymcrm.dto.RegistrationResponse;
-import com.gymcrm.dto.TraineeRegistrationRequest;
-import com.gymcrm.dto.TrainerProfileResponse;
+import com.gymcrm.dto.*;
 import com.gymcrm.facade.GymFacade;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;

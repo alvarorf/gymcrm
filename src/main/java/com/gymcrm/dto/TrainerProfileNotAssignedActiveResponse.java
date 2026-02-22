@@ -2,6 +2,7 @@ package com.gymcrm.dto;
 
 import com.gymcrm.model.TrainingType;
 import lombok.*;
+
 import java.util.List;
 
 @Data

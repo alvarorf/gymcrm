@@ -1,24 +1,21 @@
 package com.gymcrm.core.config;
 
 import com.gymcrm.core.security.JwtAuthenticationFilter;
-import org.springframework.context.annotation.*;
+import com.gymcrm.core.util.Nomenclature;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-
-// Note: BCrypt is a salt-based hashing algorithm by default
-// It: 1. Generates a random salt and combines it with the password. 3. Hashes it multiple times 4. Stores the salt in the resulting string
+import org.springframework.web.cors.*;
 
 import java.util.List;
-
-import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 // The engine that enables AOP security, so that we can use annotations like @PreAuthorize (before method returns), @PostAuthorize
@@ -63,7 +60,21 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
+                .logout(logout -> logout
+                        .logoutUrl("/api/auth/logout")
+                        .logoutSuccessHandler((request, response, authentication) -> {
+                            // In JWT, the server can't "kill" a token easily.
+                            // We usually just return 200 OK and let the client delete the token.
+                            response.setStatus(HttpServletResponse.SC_OK);
+                            response.setContentType(MediaType.TEXT_PLAIN_VALUE);
+                            response.setCharacterEncoding("UTF-8");
+
+                            response.getWriter().write(Nomenclature.MSG.LOGOUT_SUCCESS);
+                            response.getWriter().flush();
+                        })
+                );
+        ;
 
         return http.build();
     }
@@ -78,4 +89,7 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
         return source;
     }
+
 }
+
+

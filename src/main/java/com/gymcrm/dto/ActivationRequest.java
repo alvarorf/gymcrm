@@ -1,10 +1,9 @@
 package com.gymcrm.dto;
 
 import com.gymcrm.core.util.Nomenclature;
-import jakarta.validation.constraints.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
 @Data
 @NoArgsConstructor // Required for Jackson

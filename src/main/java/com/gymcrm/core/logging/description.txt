@@ -1,4 +1,0 @@
-1. The approach is to use Servlet Filters combined with MDC (Mapped Diagnostic Context).
-This ensures that every log line produced during a request (including from the Nomenclature class) contains the transactionId.
-2. To log the request and response bodies, we use ContentCachingRequestWrapper.
-Because Standard HttpServletRequest streams can only be read once; these wrappers allow us to "peek" at the body multiple times.

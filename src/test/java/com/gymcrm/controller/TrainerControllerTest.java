@@ -29,8 +29,7 @@ import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -322,5 +321,78 @@ class TrainerControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_REG_FAILED))
                 .andExpect(jsonPath("$.details").value(Nomenclature.ERR.DETAIL_TRAINER_SPEC));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("VALIDATION: Should trigger registration handler for /register URI")
+    void handleValidation_RegisterUri() throws Exception {
+        // ARRANGE
+        TrainerRegistrationRequest invalid = TrainerRegistrationRequest.builder().firstName("").build();
+
+        // ACT
+        var result = mockMvc.perform(post("/api/trainers/register")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(invalid)));
+
+        // ASSERT
+        result.andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_REG_FAILED))
+                .andExpect(jsonPath("$.details").value(Nomenclature.ERR.DETAIL_TRAINER_SPEC));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("GENERIC RUNTIME: Should trigger handleGenericRuntimeError for non-GET requests")
+    void handleGenericRuntimeError_Triggered() throws Exception {
+// ARRANGE
+        // 1. Create a VALID request so it passes @Valid check
+        TrainerUpdateRequest request = TrainerUpdateRequest.builder()
+                .username("test.user")
+                .firstName("John")
+                .lastName("Doe")
+                .isActive(true)
+                .build();
+
+        // 2. Mock the service to throw the exception
+        String internalError = "Database down";
+        when(trainerService.updateProfile(any())).thenThrow(new RuntimeException(internalError));
+
+        // ACT
+        var result = mockMvc.perform(put("/api/trainers")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
+
+        // ASSERT
+        result.andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_INTERNAL))
+                .andExpect(jsonPath("$.message").value(internalError));
+    }
+
+    @Test
+    @WithMockUser
+    @DisplayName("GENERIC RUNTIME: Should trigger handleGenericRuntimeError for PATCH runtime exceptions")
+    void handleGenericRuntimeError_TriggeredByPatch() throws Exception {
+        // ARRANGE
+        ActivationRequest request = new ActivationRequest();
+        request.setUsername("trainer.user");
+        request.setIsActive(true);
+
+        String errorMsg = "Service unavailable";
+        // We simulate a RuntimeException during the toggle process
+        doThrow(new RuntimeException(errorMsg)).when(trainerService).toggleActivation(anyString());
+
+        // ACT
+        var result = mockMvc.perform(patch("/api/trainers/activation")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)));
+
+        // ASSERT
+        result.andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.error_type").value(Nomenclature.ERR.TYPE_INTERNAL))
+                .andExpect(jsonPath("$.message").value(errorMsg));
     }
 }

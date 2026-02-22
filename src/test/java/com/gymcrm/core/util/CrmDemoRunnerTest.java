@@ -1,4 +1,4 @@
-package com.gymcrm.util;
+package com.gymcrm.core.util;
 
 import com.gymcrm.core.util.CrmDemoRunner;
 import com.gymcrm.dto.*;

@@ -3,10 +3,12 @@ package com.gymcrm.core.exception;
 import com.gymcrm.controller.TrainingController;
 import com.gymcrm.core.util.Nomenclature;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.http.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -54,7 +56,7 @@ public class TrainingControllerExceptionHandler {
         Map<String, Object> body = createBaseBody(request, Nomenclature.ERR.TYPE_INVALID_FORMAT);
         body.put(Nomenclature.ERR.KEY_DETAILS, Nomenclature.ERR.DETAIL_INCOMPATIBLE_TYPES);
         body.put(Nomenclature.ERR.KEY_MESSAGE, Nomenclature.ERR.SUGGESTION_FORMAT);
-        body.put("technical_error", ex.getMostSpecificCause().getMessage());
+        body.put(Nomenclature.ERR.KEY_TECHNICAL_ERROR, ex.getMostSpecificCause().getMessage());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
     }
 

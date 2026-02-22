@@ -1,4 +1,4 @@
-package com.gymcrm.util;
+package com.gymcrm.core.util;
 
 import com.gymcrm.core.util.CredentialsGenerator;
 import com.gymcrm.dao.interfaces.TraineeDao;

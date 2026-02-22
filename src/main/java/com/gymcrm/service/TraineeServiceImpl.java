@@ -1,22 +1,24 @@
 package com.gymcrm.service;
 
-import com.gymcrm.core.util.*;
-import com.gymcrm.dao.interfaces.*;
+import com.gymcrm.core.util.CredentialsGenerator;
+import com.gymcrm.core.util.Nomenclature;
+import com.gymcrm.core.util.Nomenclature.Action;
+import com.gymcrm.dao.interfaces.TraineeDao;
+import com.gymcrm.dao.interfaces.TrainerDao;
 import com.gymcrm.dto.*;
 import com.gymcrm.mapper.TraineeMapper;
-import com.gymcrm.model.*;
+import com.gymcrm.model.Trainee;
+import com.gymcrm.model.Trainer;
 import com.gymcrm.service.interfaces.TraineeService;
-import com.gymcrm.core.util.*;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
-import com.gymcrm.core.util.Nomenclature.Action;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
-
-import org.slf4j.*;
-import org.springframework.transaction.annotation.Transactional;
 
 /*
 Trainee Service class should support possibility to create/update/delete/select Trainee
